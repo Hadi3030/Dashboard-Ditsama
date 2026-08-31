@@ -10,56 +10,57 @@ from src.calculations import calculate_dashboard
 # ==========================================
 
 st.set_page_config(
-    page_title="Program Dashboard",
+    page_title="Dashboard Program Ditsama 2026",
     page_icon="📊",
     layout="wide"
 )
 
 
 # ==========================================
+# LOAD CSS
+# ==========================================
+
+with open("assets/style.css") as f:
+    st.markdown(
+        f"<style>{f.read()}</style>",
+        unsafe_allow_html=True
+    )
+
+
+# ==========================================
 # HEADER
 # ==========================================
 
-st.title("📊 Program Performance Dashboard")
+st.title("📊 Dashboard Program Ditsama 2026")
 
-st.caption("Monitoring Progress, Financial Performance & Management Alert")
+st.write(
+    "Dashboard monitoring program, progress, "
+    "financial performance, dan management alert."
+)
 
 
 # ==========================================
 # SIDEBAR
 # ==========================================
 
-st.sidebar.header("Filter")
+st.sidebar.title("CONTROL")
 
-program = st.sidebar.selectbox(
+st.sidebar.selectbox(
     "Program",
     ["Semua Program"]
 )
 
-tahun = st.sidebar.selectbox(
+st.sidebar.selectbox(
+    "Bidang",
+    ["Semua Bidang"]
+)
+
+st.sidebar.selectbox(
     "Tahun",
     [2026]
 )
 
-if st.sidebar.button("🔄 Refresh Data"):
-    st.cache_data.clear()
-    st.rerun()
-
-
-# ==========================================
-# LOAD DATA
-# ==========================================
-
-try:
-
-    data = load_all_data()
-
-    dashboard_data = calculate_dashboard(data)
-
-except Exception as e:
-
-    st.error(f"Gagal mengambil data: {e}")
-    st.stop()
+st.sidebar.button("🔄 Refresh Data")
 
 
 # ==========================================
@@ -69,52 +70,28 @@ except Exception as e:
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(
-        "Total Program",
-        dashboard_data["total_program"]
-    )
+    st.metric("Total Program", "0")
 
 with col2:
-    st.metric(
-        "Progress",
-        f'{dashboard_data["progress"]:.1f}%'
-    )
+    st.metric("Progress", "0%")
 
 with col3:
-    st.metric(
-        "Budget Utilization",
-        f'{dashboard_data["budget_usage"]:.1f}%'
-    )
+    st.metric("Budget Utilization", "0%")
 
 with col4:
-    st.metric(
-        "Management Alert",
-        dashboard_data["alert_count"]
-    )
+    st.metric("Management Alert", "0")
 
 
 # ==========================================
-# FINANCIAL PERFORMANCE
+# FINANCIAL
 # ==========================================
 
 st.subheader("Financial Performance")
 
-financial_col1, financial_col2 = st.columns(2)
-
-with financial_col1:
-
-    st.plotly_chart(
-        dashboard_data["financial_chart"],
-        use_container_width=True
-    )
-
-
-with financial_col2:
-
-    st.plotly_chart(
-        dashboard_data["budget_chart"],
-        use_container_width=True
-    )
+st.info(
+    "Data financial performance akan "
+    "dihubungkan setelah sumber Excel selesai dibuat."
+)
 
 
 # ==========================================
@@ -123,9 +100,9 @@ with financial_col2:
 
 st.subheader("Program Progress")
 
-st.plotly_chart(
-    dashboard_data["progress_chart"],
-    use_container_width=True
+st.info(
+    "Data progress program akan "
+    "dihubungkan setelah sumber Excel selesai dibuat."
 )
 
 
@@ -135,8 +112,7 @@ st.plotly_chart(
 
 st.subheader("Management Alert")
 
-st.dataframe(
-    dashboard_data["alerts"],
-    use_container_width=True,
-    hide_index=True
+st.info(
+    "Management alert akan "
+    "muncul setelah data program terhubung."
 )
