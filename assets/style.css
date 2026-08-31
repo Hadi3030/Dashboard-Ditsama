@@ -1,30 +1,24 @@
-css
 /* =========================================
-   GLOBAL DASHBOARD
+   MAIN BACKGROUND
 ========================================= */
 
 .stApp {
-    background-color: #FFFFFF;
+    background-color: #FFFFFF !important;
 }
 
 
 /* =========================================
-   MAIN CONTENT
+   MAIN TEXT
 ========================================= */
 
-/* Tulisan biasa di area dashboard */
 .stApp p {
     color: #17365D;
 }
 
-
-/* Label komponen */
 .stApp label {
     color: #17365D;
 }
 
-
-/* Judul */
 h1,
 h2,
 h3 {
@@ -33,7 +27,7 @@ h3 {
 
 
 /* =========================================
-   SIDEBAR / CONTROL
+   SIDEBAR
 ========================================= */
 
 section[data-testid="stSidebar"] {
@@ -43,12 +37,7 @@ section[data-testid="stSidebar"] {
 
 /* Tulisan sidebar */
 section[data-testid="stSidebar"] p,
-section[data-testid="stSidebar"] label {
-    color: #FFFFFF !important;
-}
-
-
-/* Judul CONTROL */
+section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] h1,
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
@@ -60,14 +49,12 @@ section[data-testid="stSidebar"] h3 {
    SIDEBAR SELECTBOX
 ========================================= */
 
-section[data-testid="stSidebar"] div[data-baseweb="select"] {
+section[data-testid="stSidebar"] [data-baseweb="select"] {
     background-color: #FFFFFF !important;
     border-radius: 8px;
 }
 
-
-/* Tulisan pilihan */
-section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+section[data-testid="stSidebar"] [data-baseweb="select"] * {
     color: #17365D !important;
 }
 
@@ -76,17 +63,14 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] * {
    SIDEBAR BUTTON
 ========================================= */
 
-section[data-testid="stSidebar"] .stButton > button {
+section[data-testid="stSidebar"] .stButton button {
     background-color: #FFFFFF !important;
     color: #17365D !important;
-    border: none;
     border-radius: 8px;
     font-weight: 600;
 }
 
-
-/* Hover button */
-section[data-testid="stSidebar"] .stButton > button:hover {
+section[data-testid="stSidebar"] .stButton button:hover {
     background-color: #D9E2F3 !important;
     color: #17365D !important;
 }
@@ -97,48 +81,24 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 ========================================= */
 
 div[data-testid="metric-container"] {
-    background-color: #FFFFFF;
+    background-color: #FFFFFF !important;
     border: 1px solid #D9E2F3;
     border-radius: 12px;
     padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 
 /* Angka KPI */
-div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+div[data-testid="metric-container"]
+[data-testid="stMetricValue"] {
     color: #17365D !important;
 }
 
 
 /* Label KPI */
-div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
+div[data-testid="metric-container"]
+[data-testid="stMetricLabel"] {
     color: #17365D !important;
-}
-
-
-/* Delta KPI */
-div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
-    color: #17365D !important;
-}
-
-
-/* =========================================
-   BUTTON UMUM
-========================================= */
-
-.stButton > button {
-    background-color: #17365D;
-    color: #FFFFFF !important;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-
-.stButton > button:hover {
-    background-color: #244F7D;
-    color: #FFFFFF !important;
 }
 
 
@@ -149,21 +109,8 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
 div[data-testid="stAlert"] {
     background-color: #FFFFFF !important;
     border: 1px solid #D9E2F3 !important;
-    border-radius: 10px;
 }
 
-
-/* Tulisan info box */
 div[data-testid="stAlert"] p {
     color: #17365D !important;
-}
-
-
-/* =========================================
-   PLOTLY AREA
-========================================= */
-
-div[data-testid="stPlotlyChart"] {
-    background-color: #FFFFFF;
-    border-radius: 10px;
 }
