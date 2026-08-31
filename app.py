@@ -53,25 +53,92 @@ st.write(
 
 st.sidebar.title("CONTROL")
 
+# ------------------------------------------
+# PROGRAM FILTER
+# ------------------------------------------
+
+if not financial_df.empty:
+
+    program_list = sorted(
+        financial_df["Program"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
+
+else:
+
+    program_list = []
+
+program_options = [
+    "Semua Program"
+] + program_list
+
 program_filter = st.sidebar.selectbox(
     "Program",
-    ["Semua Program"]
+    program_options
 )
 
-bidang_filter = st.sidebar.selectbox(
-    "Bidang",
-    ["Semua Bidang"]
-)
+
+# ------------------------------------------
+# TAHUN FILTER
+# ------------------------------------------
+
+if not financial_df.empty:
+
+    year_list = sorted(
+        financial_df["Tahun"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
+
+else:
+
+    year_list = [2026]
+
+year_options = [
+    "Semua Tahun"
+] + year_list
 
 tahun_filter = st.sidebar.selectbox(
     "Tahun",
-    [2026]
+    year_options
 )
 
-refresh = st.sidebar.button(
-    "🔄 Refresh Data"
-)
 
+# ------------------------------------------
+# FILTER DATA
+# ------------------------------------------
+
+filtered_df = financial_df.copy()
+
+
+if program_filter != "Semua Program":
+
+    filtered_df = filtered_df[
+        filtered_df["Program"]
+        == program_filter
+    ]
+
+
+if tahun_filter != "Semua Tahun":
+
+    filtered_df = filtered_df[
+        filtered_df["Tahun"]
+        == tahun_filter
+    ]
+
+
+# ------------------------------------------
+# REFRESH
+# ------------------------------------------
+
+if st.sidebar.button("🔄 Refresh Data"):
+
+    st.cache_data.clear()
+
+    st.rerun()
 
 # ==========================================
 # LOAD FINANCIAL DATA
