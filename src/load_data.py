@@ -1,30 +1,59 @@
+# import pandas as pd
+
+
+# def get_sheet_data(spreadsheet_id, sheet_name):
+#     """
+#     Membaca satu sheet Google Sheets sebagai DataFrame.
+#     """
+
+#     url = (
+#         f"https://docs.google.com/spreadsheets/d/"
+#         f"{spreadsheet_id}/gviz/tq"
+#         f"?tqx=out:csv&sheet={sheet_name}"
+#     )
+
+#     return pd.read_csv(url)
+
+
+# def get_all_sheets(spreadsheet_id):
+#     """
+#     Mengambil daftar nama sheet dari Google Sheets.
+#     """
+
+#     url = (
+#         f"https://docs.google.com/spreadsheets/d/"
+#         f"{spreadsheet_id}/edit"
+#     )
+
+#     # Daftar sheet akan kita masukkan/ambil secara otomatis
+#     # setelah koneksi spreadsheet berhasil.
+#     return url
+
 import pandas as pd
 
 
-def get_sheet_data(spreadsheet_id, sheet_name):
-    """
-    Membaca satu sheet Google Sheets sebagai DataFrame.
-    """
+def load_excel_sheets(url):
 
-    url = (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{spreadsheet_id}/gviz/tq"
-        f"?tqx=out:csv&sheet={sheet_name}"
-    )
+    spreadsheet_id = url.split("/d/")[1].split("/")[0]
 
-    return pd.read_csv(url)
+    # Daftar sheet yang sementara digunakan
+    sheet_names = [
+        "DITSAMA.PM-3-6-2026-SIAP"
+    ]
 
+    sheets = {}
 
-def get_all_sheets(spreadsheet_id):
-    """
-    Mengambil daftar nama sheet dari Google Sheets.
-    """
+    for sheet_name in sheet_names:
 
-    url = (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{spreadsheet_id}/edit"
-    )
+        csv_url = (
+            f"https://docs.google.com/spreadsheets/d/"
+            f"{spreadsheet_id}/gviz/tq"
+            f"?tqx=out:csv"
+            f"&sheet={sheet_name}"
+        )
 
-    # Daftar sheet akan kita masukkan/ambil secara otomatis
-    # setelah koneksi spreadsheet berhasil.
-    return url
+        df = pd.read_csv(csv_url)
+
+        sheets[sheet_name] = df
+
+    return sheets
