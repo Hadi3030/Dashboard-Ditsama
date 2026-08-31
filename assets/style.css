@@ -1,110 +1,102 @@
-/* ================================
-   GLOBAL
-================================ */
+/* =========================================
+   GLOBAL DASHBOARD
+========================================= */
 
 .stApp {
-    background-color: #ffffff;
+    background-color: #FFFFFF;
+}
+
+/* Tulisan utama dashboard */
+.stApp p,
+.stApp label,
+.stApp span,
+.stApp div {
+    color: #17365D;
 }
 
 
-/* ================================
+/* =========================================
    SIDEBAR / CONTROL
-================================ */
+========================================= */
 
 section[data-testid="stSidebar"] {
-    background-color: #17365D;
+    background-color: #17365D !important;
 }
 
-section[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-
-/* ================================
-   MAIN CONTENT
-================================ */
-
-.main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+/* Semua tulisan di sidebar menjadi putih */
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] div {
+    color: #FFFFFF !important;
 }
 
 
-/* ================================
-   TITLE
-================================ */
+/* =========================================
+   JUDUL
+========================================= */
 
-h1 {
-    color: #17365D;
-    font-weight: 700;
-}
-
-h2, h3 {
-    color: #17365D;
+h1,
+h2,
+h3 {
+    color: #17365D !important;
 }
 
 
-/* ================================
+/* =========================================
    KPI CARD
-================================ */
+========================================= */
 
 div[data-testid="metric-container"] {
-    background-color: white;
+    background-color: #FFFFFF;
     border: 1px solid #D9E2F3;
     border-radius: 12px;
     padding: 15px;
-    box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Angka KPI */
+div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #17365D !important;
+}
+
+/* Label KPI */
+div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
+    color: #17365D !important;
 }
 
 
-/* ================================
+/* =========================================
    BUTTON
-================================ */
+========================================= */
 
 .stButton > button {
     background-color: #17365D;
-    color: white;
-    border-radius: 8px;
+    color: #FFFFFF !important;
     border: none;
+    border-radius: 8px;
     font-weight: 600;
 }
 
 .stButton > button:hover {
     background-color: #244F7D;
-    color: white;
+    color: #FFFFFF !important;
 }
 
 
-/* ================================
-   SELECTBOX
-================================ */
+/* =========================================
+   INFO BOX
+========================================= */
 
-div[data-baseweb="select"] > div {
-    border-radius: 8px;
-}
-
-
-/* ================================
-   DATAFRAME
-================================ */
-
-div[data-testid="stDataFrame"] {
-    border-radius: 10px;
-}
-
-
-/* ================================
-   INFO / PLACEHOLDER BOX
-================================ */
-
+/* Background tetap putih */
 div[data-testid="stAlert"] {
-    background-color: #17365D !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #D9E2F3 !important;
     border-radius: 10px;
-    border: none;
-    color: white !important;
-    padding: 20px;
 }
 
-div[data-testid="stAlert"] p {
-    color: white !important;
+/* Tulisan dongker */
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] span {
+    color: #17365D !important;
 }
