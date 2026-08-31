@@ -4,17 +4,42 @@ import re
 
 
 # =========================================================
-# MEMBACA FORMAT NAMA SHEET
-# Contoh:
-# DITSAMA.PM-3-6-2026-SIAP
-#
-# 3    = tanggal
-# 6    = bulan
-# 2026 = tahun
-# SIAP = nama program
+# EXTRACT PROGRAM INFO
 # =========================================================
 
 def extract_program_info(sheet_name):
+
+    # Pastikan nama sheet menjadi string
+    sheet_name = str(sheet_name)
+
+    # -----------------------------------------------------
+    # HAPUS HTML DARI NAMA SHEET
+    # -----------------------------------------------------
+
+    sheet_name = re.sub(
+        r"<[^>]*>",
+        "",
+        sheet_name
+    )
+
+    # Bersihkan HTML entity
+    sheet_name = (
+        sheet_name
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .strip()
+    )
+
+    # -----------------------------------------------------
+    # FORMAT:
+    #
+    # DITSAMA.PM-3-6-2026-SIAP
+    #
+    # 3    = tanggal
+    # 6    = bulan
+    # 2026 = tahun
+    # SIAP = program
+    # -----------------------------------------------------
 
     pattern = (
         r"DITSAMA\.PM-"
@@ -26,7 +51,8 @@ def extract_program_info(sheet_name):
 
     match = re.match(
         pattern,
-        sheet_name
+        sheet_name,
+        re.IGNORECASE
     )
 
     if not match:
@@ -38,20 +64,42 @@ def extract_program_info(sheet_name):
 
     program = match.group(4).strip()
 
-    # Bersihkan HTML
+    # -----------------------------------------------------
+    # BERSIHKAN PROGRAM
+    # -----------------------------------------------------
+
+    # Hapus semua tag HTML
     program = re.sub(
-        r"<[^>]*>",
+        r"<[^>]+>",
         "",
         program
     )
 
-    # Bersihkan HTML entity
+    # Hapus potongan HTML yang tidak lengkap
+    program = re.sub(
+        r"</?\s*[a-zA-Z][^>]*",
+        "",
+        program
+    )
+
+    # Hapus entity HTML
     program = (
         program
         .replace("&nbsp;", " ")
         .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
         .strip()
     )
+
+    # -----------------------------------------------------
+    # HANYA AMBIL NAMA PROGRAM SEBELUM HTML
+    # -----------------------------------------------------
+
+    program = re.split(
+        r"<|&lt;",
+        program
+    )[0].strip()
 
     return {
         "Tanggal": tanggal,
@@ -60,8 +108,9 @@ def extract_program_info(sheet_name):
         "Program": program
     }
 
+
 # =========================================================
-# MEMBERSIHKAN ANGKA RUPIAH
+# CLEAN NUMBER
 # =========================================================
 
 def clean_number(value):
@@ -74,19 +123,25 @@ def clean_number(value):
 
     value = str(value)
 
-    value = value.replace("Rp", "")
-    value = value.replace(" ", "")
+    value = value.replace(
+        "Rp",
+        ""
+    )
 
-    # Format angka Indonesia
-    # Contoh:
-    # 1.068.000.000
-    # menjadi:
-    # 1068000000
+    value = value.replace(
+        " ",
+        ""
+    )
 
-    value = value.replace(".", "")
+    value = value.replace(
+        ".",
+        ""
+    )
 
-    # Jika ada koma
-    value = value.replace(",", ".")
+    value = value.replace(
+        ",",
+        "."
+    )
 
     try:
         return float(value)
@@ -97,37 +152,33 @@ def clean_number(value):
 
 # =========================================================
 # FINANCIAL PERFORMANCE
-#
-# Batang 1:
-# TOTAL NILAI PENGAJUAN
-#
-# Batang 2:
-# SISA SALDO TERAKHIR
 # =========================================================
 
 def extract_financial_performance(sheets):
 
     results = []
 
-    # Loop semua sheet
     for sheet_name, df in sheets.items():
 
         # =================================================
-        # CEK NAMA SHEET
+        # BACA INFORMASI PROGRAM DARI NAMA SHEET
         # =================================================
 
         info = extract_program_info(
             sheet_name
         )
 
-        # Kalau nama sheet tidak sesuai format,
-        # lewati sheet tersebut
-
         if info is None:
             continue
 
         # =================================================
-        # BERSIHKAN NAMA KOLOM
+        # COPY DATAFRAME
+        # =================================================
+
+        df = df.copy()
+
+        # =================================================
+        # BERSIHKAN HEADER
         # =================================================
 
         df.columns = (
@@ -137,7 +188,7 @@ def extract_financial_performance(sheets):
         )
 
         # =================================================
-        # CARI KOLOM SECARA OTOMATIS
+        # CARI KOLOM
         # =================================================
 
         uraian_col = None
@@ -156,13 +207,45 @@ def extract_financial_performance(sheets):
 
                 uraian_col = col
 
-            elif "nilai pengajuan" in col_clean:
+            if "nilai pengajuan" in col_clean:
 
                 pengajuan_col = col
 
-            elif "saldo" in col_clean:
+            if "saldo" in col_clean:
 
                 saldo_col = col
+
+        # =================================================
+        # TARGET / NILAI PKS
+        # =================================================
+
+        target = 0
+
+        if uraian_col is not None:
+
+            target_rows = df[
+                df[uraian_col]
+                .astype(str)
+                .str.contains(
+                    "nilai pks",
+                    case=False,
+                    na=False
+                )
+            ]
+
+            if not target_rows.empty:
+
+                row = target_rows.iloc[0]
+
+                for value in row:
+
+                    number = clean_number(
+                        value
+                    )
+
+                    if number > target:
+
+                        target = number
 
         # =================================================
         # TOTAL NILAI PENGAJUAN
@@ -170,66 +253,77 @@ def extract_financial_performance(sheets):
 
         total_pengajuan = 0
 
-        if pengajuan_col:
+        if (
+            uraian_col is not None
+            and
+            pengajuan_col is not None
+        ):
 
-            data_pengajuan = df.copy()
+            actual_rows = df[
+                ~df[uraian_col]
+                .astype(str)
+                .str.contains(
+                    "nilai pks",
+                    case=False,
+                    na=False
+                )
+            ]
 
-            # Jangan memasukkan baris "Nilai PKS"
-            # karena itu bukan transaksi pengajuan
+            for value in actual_rows[
+                pengajuan_col
+            ]:
 
-            if uraian_col:
-
-                data_pengajuan = data_pengajuan[
-                    ~data_pengajuan[
-                        uraian_col
-                    ]
-                    .astype(str)
-                    .str.contains(
-                        "nilai pks",
-                        case=False,
-                        na=False
-                    )
-                ]
-
-            # Jumlahkan seluruh Nilai Pengajuan
-
-            total_pengajuan = (
-                data_pengajuan[
-                    pengajuan_col
-                ]
-                .apply(clean_number)
-                .sum()
-            )
+                total_pengajuan += (
+                    clean_number(value)
+                )
 
         # =================================================
-        # SISA SALDO TERAKHIR
+        # SALDO TERAKHIR
         # =================================================
 
         saldo_terakhir = 0
 
-        if saldo_col:
+        if saldo_col is not None:
 
-            saldo_values = (
-                df[saldo_col]
-                .apply(clean_number)
-            )
+            saldo_values = []
 
-            # Buang nilai kosong / 0
+            for value in df[
+                saldo_col
+            ]:
 
-            saldo_values = saldo_values[
-                saldo_values > 0
-            ]
+                number = clean_number(
+                    value
+                )
 
-            # Ambil saldo paling terakhir
+                if number != 0:
 
-            if not saldo_values.empty:
+                    saldo_values.append(
+                        number
+                    )
+
+            if saldo_values:
 
                 saldo_terakhir = (
-                    saldo_values.iloc[-1]
+                    saldo_values[-1]
                 )
 
         # =================================================
-        # SIMPAN HASIL
+        # PERSENTASE
+        # =================================================
+
+        if target > 0:
+
+            percentage = (
+                total_pengajuan
+                / target
+            ) * 100
+
+        else:
+
+            percentage = 0
+
+        # =================================================
+        # SIMPAN
         # =================================================
 
         results.append({
@@ -246,20 +340,62 @@ def extract_financial_performance(sheets):
             "Tahun":
                 info["Tahun"],
 
+            "Target":
+                target,
+
+            "Actual":
+                total_pengajuan,
+
             "Total Pengajuan":
                 total_pengajuan,
 
             "Saldo Terakhir":
-                saldo_terakhir
+                saldo_terakhir,
+
+            "Percentage":
+                percentage
         })
 
     # =====================================================
-    # HASIL AKHIR
+    # BUAT DATAFRAME
     # =====================================================
 
-    return pd.DataFrame(
+    result_df = pd.DataFrame(
         results
     )
+
+    # =====================================================
+    # PEMBERSIHAN TERAKHIR NAMA PROGRAM
+    # =====================================================
+
+    if not result_df.empty:
+
+        result_df["Program"] = (
+            result_df["Program"]
+            .astype(str)
+            .str.replace(
+                r"<[^>]*>",
+                "",
+                regex=True
+            )
+            .str.replace(
+                r"</?\s*[a-zA-Z][^>]*",
+                "",
+                regex=True
+            )
+            .str.split(
+                "<"
+            )
+            .str[0]
+            .str.strip()
+        )
+
+        # Hapus baris program kosong
+        result_df = result_df[
+            result_df["Program"] != ""
+        ]
+
+    return result_df
 
 
 # =========================================================
@@ -294,7 +430,7 @@ def format_rupiah(value):
 
 
 # =========================================================
-# MEMBUAT GRAFIK FINANCIAL PERFORMANCE
+# FINANCIAL CHART
 # =========================================================
 
 def create_financial_chart(df):
@@ -302,12 +438,10 @@ def create_financial_chart(df):
     fig = go.Figure()
 
     # =====================================================
-    # BATANG 1
     # TOTAL NILAI PENGAJUAN
     # =====================================================
 
     fig.add_trace(
-
         go.Bar(
 
             name="Total Nilai Pengajuan",
@@ -318,7 +452,9 @@ def create_financial_chart(df):
 
             text=[
                 format_rupiah(x)
-                for x in df["Total Pengajuan"]
+                for x in df[
+                    "Total Pengajuan"
+                ]
             ],
 
             textposition="outside",
@@ -333,15 +469,13 @@ def create_financial_chart(df):
     )
 
     # =====================================================
-    # BATANG 2
-    # SISA SALDO
+    # SALDO TERAKHIR
     # =====================================================
 
     fig.add_trace(
-
         go.Bar(
 
-            name="Sisa Saldo",
+            name="Saldo Terakhir",
 
             x=df["Program"],
 
@@ -349,14 +483,16 @@ def create_financial_chart(df):
 
             text=[
                 format_rupiah(x)
-                for x in df["Saldo Terakhir"]
+                for x in df[
+                    "Saldo Terakhir"
+                ]
             ],
 
             textposition="outside",
 
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Sisa Saldo: "
+                "Saldo Terakhir: "
                 "Rp %{y:,.0f}"
                 "<extra></extra>"
             )
@@ -374,16 +510,10 @@ def create_financial_chart(df):
             text="Financial Performance",
 
             font=dict(
-
                 size=20,
-
                 color="#17365D"
             )
         ),
-
-        # -------------------------------------------------
-        # SUMBU X
-        # -------------------------------------------------
 
         xaxis=dict(
 
@@ -392,24 +522,16 @@ def create_financial_chart(df):
                 text="Nama Program",
 
                 font=dict(
-
                     size=14,
-
                     color="#17365D"
                 )
             ),
 
             tickfont=dict(
-
                 size=12,
-
                 color="#17365D"
             )
         ),
-
-        # -------------------------------------------------
-        # SUMBU Y
-        # -------------------------------------------------
 
         yaxis=dict(
 
@@ -418,49 +540,28 @@ def create_financial_chart(df):
                 text="Total (Rupiah)",
 
                 font=dict(
-
                     size=14,
-
                     color="#17365D"
                 )
             ),
 
             tickfont=dict(
-
                 size=12,
-
                 color="#17365D"
             ),
 
             tickformat=","
         ),
 
-        # -------------------------------------------------
-        # DUA BATANG BERDAMPINGAN
-        # -------------------------------------------------
-
         barmode="group",
-
-        # -------------------------------------------------
-        # BACKGROUND
-        # -------------------------------------------------
 
         plot_bgcolor="white",
 
         paper_bgcolor="white",
 
-        # -------------------------------------------------
-        # WARNA TEKS
-        # -------------------------------------------------
-
         font=dict(
-
             color="#17365D"
         ),
-
-        # -------------------------------------------------
-        # LEGEND
-        # -------------------------------------------------
 
         legend=dict(
 
@@ -469,34 +570,21 @@ def create_financial_chart(df):
                 text="Keterangan",
 
                 font=dict(
-
-                    color="#17365D",
-
-                    size=13
+                    color="#17365D"
                 )
             ),
 
             font=dict(
-
                 color="#17365D",
-
                 size=12
             )
         ),
 
-        # -------------------------------------------------
-        # MARGIN
-        # -------------------------------------------------
-
         margin=dict(
-
             l=80,
-
             r=40,
-
             t=90,
-
-            b=80
+            b=100
         )
     )
 
