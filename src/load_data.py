@@ -1,10 +1,16 @@
 import pandas as pd
 import requests
 import re
-from io import StringIO
+from io import BytesIO
+from urllib.parse import quote
 
+
+# =========================================================
+# GET SPREADSHEET ID
+# =========================================================
 
 def get_spreadsheet_id(url):
+
     """
     Mengambil ID Google Spreadsheet dari URL.
     """
@@ -15,6 +21,7 @@ def get_spreadsheet_id(url):
     )
 
     if not match:
+
         raise ValueError(
             "URL Google Sheets tidak valid."
         )
@@ -22,91 +29,128 @@ def get_spreadsheet_id(url):
     return match.group(1)
 
 
-def get_sheet_data(
-    spreadsheet_id,
-    sheet_name
-):
-    """
-    Membaca satu sheet Google Sheets.
-    """
-
-    url = (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{spreadsheet_id}/gviz/tq"
-        f"?tqx=out:csv"
-        f"&sheet={sheet_name}"
-    )
-
-    response = requests.get(url)
-
-    response.raise_for_status()
-
-    return pd.read_csv(
-        StringIO(response.text)
-    )
-
+# =========================================================
+# LOAD SEMUA SHEET
+# =========================================================
 
 def load_all_sheets(url):
+
     """
-    Membaca seluruh sheet yang tersedia
-    dari satu Google Spreadsheet.
+    Membaca SEMUA sheet dari Google Spreadsheet.
+
+    Google Sheets digunakan sebagai sumber data.
+    Tidak perlu upload file Excel ke GitHub.
 
     Hanya sheet dengan format:
 
-    DITSAMA.PM-3-6-2026-SIAP
+        DITSAMA.PM-3-6-2026-SIAP
 
     yang akan diproses.
     """
 
+    # -----------------------------------------------------
+    # Ambil Spreadsheet ID
+    # -----------------------------------------------------
+
     spreadsheet_id = get_spreadsheet_id(url)
 
-    # ==========================================
-    # AMBIL HALAMAN GOOGLE SHEETS
-    # ==========================================
+    # -----------------------------------------------------
+    # Gunakan endpoint export XLSX
+    # -----------------------------------------------------
 
-    html_url = (
-        f"https://docs.google.com/spreadsheets/d/"
-        f"{spreadsheet_id}/edit"
+    xlsx_url = (
+        "https://docs.google.com/spreadsheets/d/"
+        f"{spreadsheet_id}/export?format=xlsx"
     )
 
-    response = requests.get(html_url)
+    response = requests.get(
+        xlsx_url,
+        timeout=30
+    )
 
     response.raise_for_status()
 
-    html = response.text
+    # -----------------------------------------------------
+    # Baca file Excel langsung dari memory
+    # -----------------------------------------------------
 
-    # ==========================================
-    # CARI NAMA SHEET
-    # ==========================================
-
-    sheet_names = re.findall(
-        r'DITSAMA\.PM-[0-9]+-[0-9]+-[0-9]{4}-[^"]+',
-        html
+    excel_file = pd.ExcelFile(
+        BytesIO(response.content),
+        engine="openpyxl"
     )
 
-    # Hilangkan duplikasi
-    sheet_names = list(
-        dict.fromkeys(sheet_names)
+    # -----------------------------------------------------
+    # Ambil semua nama sheet
+    # -----------------------------------------------------
+
+    all_sheet_names = (
+        excel_file.sheet_names
     )
 
     sheets = {}
 
-    # ==========================================
-    # BACA SETIAP SHEET
-    # ==========================================
+    # =====================================================
+    # PROSES SETIAP SHEET
+    # =====================================================
 
-    for sheet_name in sheet_names:
+    for sheet_name in all_sheet_names:
+
+        # -------------------------------------------------
+        # Pastikan nama sheet string
+        # -------------------------------------------------
+
+        sheet_name = str(
+            sheet_name
+        ).strip()
+
+        # -------------------------------------------------
+        # Hanya proses format:
+        #
+        # DITSAMA.PM-3-6-2026-SIAP
+        #
+        # -------------------------------------------------
+
+        pattern = (
+            r"^DITSAMA\.PM-"
+            r"\d+-"
+            r"\d+-"
+            r"\d{4}-"
+            r".+"
+        )
+
+        if not re.match(
+            pattern,
+            sheet_name,
+            re.IGNORECASE
+        ):
+
+            continue
+
+        # -------------------------------------------------
+        # Baca sheet
+        #
+        # header=None sengaja digunakan karena file kamu
+        # mempunyai judul/header beberapa baris di atas.
+        # -------------------------------------------------
 
         try:
 
-            df = get_sheet_data(
-                spreadsheet_id,
-                sheet_name
+            df = pd.read_excel(
+                excel_file,
+                sheet_name=sheet_name,
+                header=None,
+                engine="openpyxl"
             )
 
             sheets[sheet_name] = df
 
-        except Exception:
+        except Exception as e:
+
+            print(
+                f"Gagal membaca sheet "
+                f"{sheet_name}: {e}"
+            )
+
             continue
 
     return sheets
