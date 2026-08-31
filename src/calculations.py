@@ -683,18 +683,22 @@ def create_financial_chart(df):
 
         if value >= 1_000_000_000:
             angka = value / 1_000_000_000
-            return f"Rp{angka:g} M"
-
+            teks = f"{angka:.1f}".replace(".", ",")
+            return f"Rp{teks} M"
+    
         elif value >= 1_000_000:
             angka = value / 1_000_000
-            return f"Rp{angka:g} Jt"
-
+            teks = f"{angka:.0f}"
+            return f"Rp{teks} Jt"
+    
         elif value >= 1_000:
             angka = value / 1_000
-            return f"Rp{angka:g} Rb"
-
+            teks = f"{angka:.0f}"
+            return f"Rp{teks} Rb"
+    
         else:
-            return f"Rp{value:g}"
+            return f"Rp{value:,.0f}".replace(",", ".")
+        
 
     ticktext = [
         format_axis(value)
@@ -724,8 +728,11 @@ def create_financial_chart(df):
     # =====================================================
 
     fig.update_yaxes(
-        tickvals=tickvals,
-        ticktext=ticktext
+    tickmode="array",
+    tickvals=tickvals,
+    ticktext=ticktext,
+    exponentformat="none",
+    showexponent="none"
     )
 
     return fig
