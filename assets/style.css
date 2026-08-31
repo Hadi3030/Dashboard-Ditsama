@@ -1,3 +1,4 @@
+css
 /* =========================================
    GLOBAL DASHBOARD
 ========================================= */
@@ -6,12 +7,28 @@
     background-color: #FFFFFF;
 }
 
-/* Tulisan utama dashboard */
-.stApp p,
-.stApp label,
-.stApp span,
-.stApp div {
+
+/* =========================================
+   MAIN CONTENT
+========================================= */
+
+/* Tulisan biasa di area dashboard */
+.stApp p {
     color: #17365D;
+}
+
+
+/* Label komponen */
+.stApp label {
+    color: #17365D;
+}
+
+
+/* Judul */
+h1,
+h2,
+h3 {
+    color: #17365D !important;
 }
 
 
@@ -23,22 +40,54 @@ section[data-testid="stSidebar"] {
     background-color: #17365D !important;
 }
 
-/* Semua tulisan di sidebar menjadi putih */
+
+/* Tulisan sidebar */
 section[data-testid="stSidebar"] p,
-section[data-testid="stSidebar"] label,
-section[data-testid="stSidebar"] span,
-section[data-testid="stSidebar"] div {
+section[data-testid="stSidebar"] label {
+    color: #FFFFFF !important;
+}
+
+
+/* Judul CONTROL */
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
     color: #FFFFFF !important;
 }
 
 
 /* =========================================
-   JUDUL
+   SIDEBAR SELECTBOX
 ========================================= */
 
-h1,
-h2,
-h3 {
+section[data-testid="stSidebar"] div[data-baseweb="select"] {
+    background-color: #FFFFFF !important;
+    border-radius: 8px;
+}
+
+
+/* Tulisan pilihan */
+section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color: #17365D !important;
+}
+
+
+/* =========================================
+   SIDEBAR BUTTON
+========================================= */
+
+section[data-testid="stSidebar"] .stButton > button {
+    background-color: #FFFFFF !important;
+    color: #17365D !important;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+
+/* Hover button */
+section[data-testid="stSidebar"] .stButton > button:hover {
+    background-color: #D9E2F3 !important;
     color: #17365D !important;
 }
 
@@ -55,10 +104,12 @@ div[data-testid="metric-container"] {
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+
 /* Angka KPI */
 div[data-testid="metric-container"] [data-testid="stMetricValue"] {
     color: #17365D !important;
 }
+
 
 /* Label KPI */
 div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
@@ -66,8 +117,14 @@ div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
 }
 
 
+/* Delta KPI */
+div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+    color: #17365D !important;
+}
+
+
 /* =========================================
-   BUTTON
+   BUTTON UMUM
 ========================================= */
 
 .stButton > button {
@@ -77,6 +134,7 @@ div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
     border-radius: 8px;
     font-weight: 600;
 }
+
 
 .stButton > button:hover {
     background-color: #244F7D;
@@ -88,15 +146,24 @@ div[data-testid="metric-container"] [data-testid="stMetricLabel"] {
    INFO BOX
 ========================================= */
 
-/* Background tetap putih */
 div[data-testid="stAlert"] {
     background-color: #FFFFFF !important;
     border: 1px solid #D9E2F3 !important;
     border-radius: 10px;
 }
 
-/* Tulisan dongker */
-div[data-testid="stAlert"] p,
-div[data-testid="stAlert"] span {
+
+/* Tulisan info box */
+div[data-testid="stAlert"] p {
     color: #17365D !important;
+}
+
+
+/* =========================================
+   PLOTLY AREA
+========================================= */
+
+div[data-testid="stPlotlyChart"] {
+    background-color: #FFFFFF;
+    border-radius: 10px;
 }
