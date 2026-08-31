@@ -5,6 +5,25 @@ from src.load_data import load_all_data
 from src.calculations import calculate_dashboard
 
 
+sheets = load_excel_sheets(
+    EXCEL_URLS["financial"]
+)
+
+financial_df = extract_financial_performance(
+    sheets
+)
+
+financial_chart = create_financial_chart(
+    financial_df
+)
+
+st.subheader("Financial Performance")
+
+st.plotly_chart(
+    financial_chart,
+    use_container_width=True
+)
+
 # ==========================================
 # PAGE CONFIG
 # ==========================================
