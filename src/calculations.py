@@ -1,7 +1,19 @@
+```python
 import pandas as pd
 import plotly.graph_objects as go
 import re
 
+
+# =========================================================
+# MEMBACA FORMAT NAMA SHEET
+# Contoh:
+# DITSAMA.PM-3-6-2026-SIAP
+#
+# 3    = tanggal
+# 6    = bulan
+# 2026 = tahun
+# SIAP = nama program
+# =========================================================
 
 def extract_program_info(sheet_name):
 
@@ -34,6 +46,10 @@ def extract_program_info(sheet_name):
     }
 
 
+# =========================================================
+# MEMBERSIHKAN ANGKA RUPIAH
+# =========================================================
+
 def clean_number(value):
 
     if pd.isna(value):
@@ -44,28 +60,19 @@ def clean_number(value):
 
     value = str(value)
 
-    # Hilangkan Rp
-    value = value.replace(
-        "Rp",
-        ""
-    )
+    value = value.replace("Rp", "")
+    value = value.replace(" ", "")
 
-    # Hilangkan spasi
-    value = value.replace(
-        " ",
-        ""
-    )
+    # Format angka Indonesia
+    # Contoh:
+    # 1.068.000.000
+    # menjadi:
+    # 1068000000
 
-    # Format Indonesia
-    value = value.replace(
-        ".",
-        ""
-    )
+    value = value.replace(".", "")
 
-    value = value.replace(
-        ",",
-        "."
-    )
+    # Jika ada koma
+    value = value.replace(",", ".")
 
     try:
         return float(value)
@@ -74,26 +81,40 @@ def clean_number(value):
         return 0
 
 
+# =========================================================
+# FINANCIAL PERFORMANCE
+#
+# Batang 1:
+# TOTAL NILAI PENGAJUAN
+#
+# Batang 2:
+# SISA SALDO TERAKHIR
+# =========================================================
+
 def extract_financial_performance(sheets):
 
     results = []
 
+    # Loop semua sheet
     for sheet_name, df in sheets.items():
 
-        # ==================================
-        # CEK FORMAT NAMA SHEET
-        # ==================================
+        # =================================================
+        # CEK NAMA SHEET
+        # =================================================
 
         info = extract_program_info(
             sheet_name
         )
 
+        # Kalau nama sheet tidak sesuai format,
+        # lewati sheet tersebut
+
         if info is None:
             continue
 
-        # ==================================
-        # BERSIHKAN HEADER
-        # ==================================
+        # =================================================
+        # BERSIHKAN NAMA KOLOM
+        # =================================================
 
         df.columns = (
             df.columns
@@ -101,12 +122,13 @@ def extract_financial_performance(sheets):
             .str.strip()
         )
 
-        # ==================================
-        # CARI KOLOM
-        # ==================================
+        # =================================================
+        # CARI KOLOM SECARA OTOMATIS
+        # =================================================
 
         uraian_col = None
         pengajuan_col = None
+        saldo_col = None
 
         for col in df.columns:
 
@@ -120,94 +142,81 @@ def extract_financial_performance(sheets):
 
                 uraian_col = col
 
-            if (
-                "nilai pengajuan"
-                in col_clean
-            ):
+            elif "nilai pengajuan" in col_clean:
 
                 pengajuan_col = col
 
-        # ==================================
-        # TARGET
-        # ==================================
+            elif "saldo" in col_clean:
 
-        target = 0
+                saldo_col = col
 
-        if uraian_col:
+        # =================================================
+        # TOTAL NILAI PENGAJUAN
+        # =================================================
 
-            target_rows = df[
-                df[uraian_col]
-                .astype(str)
-                .str.contains(
-                    "nilai pks",
-                    case=False,
-                    na=False
-                )
-            ]
+        total_pengajuan = 0
 
-            if not target_rows.empty:
+        if pengajuan_col:
 
-                row = target_rows.iloc[0]
+            data_pengajuan = df.copy()
 
-                # Cari angka terbesar
-                # pada baris Nilai PKS
+            # Jangan memasukkan baris "Nilai PKS"
+            # karena itu bukan transaksi pengajuan
 
-                for value in row:
+            if uraian_col:
 
-                    number = clean_number(
-                        value
+                data_pengajuan = data_pengajuan[
+                    ~data_pengajuan[
+                        uraian_col
+                    ]
+                    .astype(str)
+                    .str.contains(
+                        "nilai pks",
+                        case=False,
+                        na=False
                     )
+                ]
 
-                    if number > target:
-                        target = number
+            # Jumlahkan seluruh Nilai Pengajuan
 
-        # ==================================
-        # ACTUAL
-        # ==================================
+            total_pengajuan = (
+                data_pengajuan[
+                    pengajuan_col
+                ]
+                .apply(clean_number)
+                .sum()
+            )
 
-        actual = 0
+        # =================================================
+        # SISA SALDO TERAKHIR
+        # =================================================
 
-        if (
-            uraian_col
-            and
-            pengajuan_col
-        ):
+        saldo_terakhir = 0
 
-            actual_rows = df[
-                ~df[uraian_col]
-                .astype(str)
-                .str.contains(
-                    "nilai pks",
-                    case=False,
-                    na=False
-                )
+        if saldo_col:
+
+            saldo_values = (
+                df[saldo_col]
+                .apply(clean_number)
+            )
+
+            # Buang nilai kosong / 0
+
+            saldo_values = saldo_values[
+                saldo_values > 0
             ]
 
-            for value in actual_rows[
-                pengajuan_col
-            ]:
+            # Ambil saldo paling terakhir
 
-                actual += clean_number(
-                    value
+            if not saldo_values.empty:
+
+                saldo_terakhir = (
+                    saldo_values.iloc[-1]
                 )
 
-        # ==================================
-        # PERSENTASE
-        # ==================================
-
-        if target > 0:
-
-            percentage = (
-                actual / target
-            ) * 100
-
-        else:
-
-            percentage = 0
-
-        # ==================================
-        # SIMPAN
-        # ==================================
+        # =================================================
+        # SIMPAN HASIL
+        # =================================================
 
         results.append({
 
@@ -223,20 +232,25 @@ def extract_financial_performance(sheets):
             "Tahun":
                 info["Tahun"],
 
-            "Target":
-                target,
+            "Total Pengajuan":
+                total_pengajuan,
 
-            "Actual":
-                actual,
-
-            "Percentage":
-                percentage
+            "Saldo Terakhir":
+                saldo_terakhir
         })
+
+    # =====================================================
+    # HASIL AKHIR
+    # =====================================================
 
     return pd.DataFrame(
         results
     )
 
+
+# =========================================================
+# FORMAT RUPIAH
+# =========================================================
 
 def format_rupiah(value):
 
@@ -265,143 +279,209 @@ def format_rupiah(value):
         )
 
 
+# =========================================================
+# MEMBUAT GRAFIK FINANCIAL PERFORMANCE
+# =========================================================
+
 def create_financial_chart(df):
 
     fig = go.Figure()
 
-    # ==================================
-    # TARGET
-    # ==================================
+    # =====================================================
+    # BATANG 1
+    # TOTAL NILAI PENGAJUAN
+    # =====================================================
 
     fig.add_trace(
+
         go.Bar(
 
-            name="Target",
+            name="Total Nilai Pengajuan",
 
             x=df["Program"],
 
-            y=df["Target"],
+            y=df["Total Pengajuan"],
 
             text=[
                 format_rupiah(x)
-                for x in df["Target"]
+                for x in df["Total Pengajuan"]
             ],
 
             textposition="outside",
 
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Target: Rp %{y:,.0f}"
+                "Total Nilai Pengajuan: "
+                "Rp %{y:,.0f}"
                 "<extra></extra>"
             )
         )
     )
 
-    # ==================================
-    # ACTUAL
-    # ==================================
+    # =====================================================
+    # BATANG 2
+    # SISA SALDO
+    # =====================================================
 
     fig.add_trace(
+
         go.Bar(
 
-            name="Actual",
+            name="Sisa Saldo",
 
             x=df["Program"],
 
-            y=df["Actual"],
+            y=df["Saldo Terakhir"],
 
             text=[
                 format_rupiah(x)
-                for x in df["Actual"]
+                for x in df["Saldo Terakhir"]
             ],
 
             textposition="outside",
 
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Actual: Rp %{y:,.0f}"
+                "Sisa Saldo: "
+                "Rp %{y:,.0f}"
                 "<extra></extra>"
             )
         )
     )
 
-    # ==================================
+    # =====================================================
     # LAYOUT
-    # ==================================
+    # =====================================================
 
     fig.update_layout(
 
         title=dict(
+
             text="Financial Performance",
+
             font=dict(
+
                 size=20,
+
                 color="#17365D"
             )
         ),
+
+        # -------------------------------------------------
+        # SUMBU X
+        # -------------------------------------------------
 
         xaxis=dict(
 
             title=dict(
+
                 text="Nama Program",
+
                 font=dict(
+
                     size=14,
+
                     color="#17365D"
                 )
             ),
 
             tickfont=dict(
+
                 size=12,
+
                 color="#17365D"
             )
         ),
 
+        # -------------------------------------------------
+        # SUMBU Y
+        # -------------------------------------------------
+
         yaxis=dict(
 
             title=dict(
+
                 text="Total (Rupiah)",
+
                 font=dict(
+
                     size=14,
+
                     color="#17365D"
                 )
             ),
 
             tickfont=dict(
+
                 size=12,
+
                 color="#17365D"
             ),
 
             tickformat=","
         ),
 
+        # -------------------------------------------------
+        # DUA BATANG BERDAMPINGAN
+        # -------------------------------------------------
+
         barmode="group",
+
+        # -------------------------------------------------
+        # BACKGROUND
+        # -------------------------------------------------
 
         plot_bgcolor="white",
 
         paper_bgcolor="white",
 
+        # -------------------------------------------------
+        # WARNA TEKS
+        # -------------------------------------------------
+
         font=dict(
+
             color="#17365D"
         ),
+
+        # -------------------------------------------------
+        # LEGEND
+        # -------------------------------------------------
 
         legend=dict(
 
             title=dict(
+
                 text="Keterangan",
+
                 font=dict(
-                    color="#17365D"
+
+                    color="#17365D",
+
+                    size=13
                 )
             ),
 
             font=dict(
+
                 color="#17365D",
+
                 size=12
             )
         ),
 
+        # -------------------------------------------------
+        # MARGIN
+        # -------------------------------------------------
+
         margin=dict(
+
             l=80,
+
             r=40,
+
             t=90,
+
             b=80
         )
     )
