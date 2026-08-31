@@ -63,3 +63,50 @@ def extract_financial_performance(sheets):
         })
 
     return pd.DataFrame(results)
+
+#=================================================================================================================
+
+import plotly.graph_objects as go
+
+
+def create_financial_chart(df):
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            name="Target",
+            x=df["Program"],
+            y=df["Target"],
+            text=df["Target"],
+            texttemplate="Rp %{text:,.0f}",
+            textposition="outside"
+        )
+    )
+
+    fig.add_trace(
+        go.Bar(
+            name="Actual",
+            x=df["Program"],
+            y=df["Actual"],
+            text=df["Actual"],
+            texttemplate="Rp %{text:,.0f}",
+            textposition="outside"
+        )
+    )
+
+    fig.update_layout(
+        title="Financial Performance",
+        xaxis_title="Nama Program",
+        yaxis_title="Total (Rp)",
+        barmode="group",
+        hovermode="x unified",
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        yaxis=dict(
+            tickformat=","
+        ),
+        legend_title="Keterangan"
+    )
+
+    return fig
