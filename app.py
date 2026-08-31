@@ -23,21 +23,29 @@ st.set_page_config(
 
 
 # =========================================================
-# CSS
+# LOAD CSS
 # =========================================================
 
 try:
 
-    with open("assets/style.css") as f:
+    with open(
+        "assets/style.css",
+        "r",
+        encoding="utf-8"
+    ) as f:
 
-        # st.markdown(
-        #     f"<style>{f.read()}</style>",
-        #     unsafe_allow_html=True
-        # )
+        css = f.read()
+
+    st.markdown(
+        f"<style>{css}</style>",
+        unsafe_allow_html=True
+    )
 
 except FileNotFoundError:
 
-    pass
+    st.warning(
+        "File assets/style.css tidak ditemukan."
+    )
 
 
 # =========================================================
@@ -127,9 +135,6 @@ program_filter = st.sidebar.selectbox(
 # BIDANG FILTER
 # =========================================================
 
-# Untuk sementara Bidang belum digunakan
-# karena belum ada kolom Bidang pada data.
-
 bidang_filter = st.sidebar.selectbox(
     "Bidang",
     ["Semua Bidang"]
@@ -168,7 +173,7 @@ tahun_filter = st.sidebar.selectbox(
 
 
 # =========================================================
-# REFRESH BUTTON
+# REFRESH DATA
 # =========================================================
 
 if st.sidebar.button(
@@ -187,10 +192,11 @@ if st.sidebar.button(
 filtered_df = financial_df.copy()
 
 
-if (
-    program_filter
-    != "Semua Program"
-):
+# ---------------------------------------------------------
+# FILTER PROGRAM
+# ---------------------------------------------------------
+
+if program_filter != "Semua Program":
 
     filtered_df = filtered_df[
         filtered_df[
@@ -200,10 +206,11 @@ if (
     ]
 
 
-if (
-    tahun_filter
-    != "Semua Tahun"
-):
+# ---------------------------------------------------------
+# FILTER TAHUN
+# ---------------------------------------------------------
+
+if tahun_filter != "Semua Tahun":
 
     filtered_df = filtered_df[
         filtered_df[
@@ -267,7 +274,7 @@ with col1:
 with col2:
 
     st.metric(
-        "Total Pengajuan",
+        "Total Nilai Pengajuan",
         f"Rp {total_pengajuan:,.0f}"
     )
 
@@ -294,7 +301,9 @@ with col4:
 # PARTICIPANT TARGET
 # =========================================================
 
-col_left, col_right = st.columns(2)
+col_left, col_right = st.columns(
+    [1, 1]
+)
 
 
 # =========================================================
