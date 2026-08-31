@@ -1,28 +1,174 @@
 import pandas as pd
+import plotly.graph_objects as go
 
 
-def load_excel_sheets(url):
+def extract_financial_performance(sheets):
 
-    spreadsheet_id = url.split("/d/")[1].split("/")[0]
+    results = []
 
-    # Daftar sheet yang sementara digunakan
-    sheet_names = [
-        "DITSAMA.PM-3-6-2026-SIAP"
-    ]
+    for sheet_name, df in sheets.items():
 
-    sheets = {}
+        # ==================================
+        # NAMA PROGRAM
+        # ==================================
 
-    for sheet_name in sheet_names:
+        program = sheet_name.split("-")[-1].strip()
 
-        csv_url = (
-            f"https://docs.google.com/spreadsheets/d/"
-            f"{spreadsheet_id}/gviz/tq"
-            f"?tqx=out:csv"
-            f"&sheet={sheet_name}"
+        # ==================================
+        # BERSIHKAN NAMA KOLOM
+        # ==================================
+
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
         )
 
-        df = pd.read_csv(csv_url)
+        # ==================================
+        # TARGET
+        # Target = Nilai PKS
+        # ==================================
 
-        sheets[sheet_name] = df
+        target = 0
 
-    return sheets
+        if "Uraian Pengajuan" in df.columns:
+
+            target_row = df[
+                df["Uraian Pengajuan"]
+                .astype(str)
+                .str.contains(
+                    "Nilai PKS",
+                    case=False,
+                    na=False
+                )
+            ]
+
+            if not target_row.empty:
+
+                row = target_row.iloc[0]
+
+                for value in row:
+
+                    try:
+
+                        number = pd.to_numeric(
+                            value,
+                            errors="coerce"
+                        )
+
+                        if pd.notna(number):
+                            target = max(
+                                target,
+                                float(number)
+                            )
+
+                    except Exception:
+                        pass
+
+        # ==================================
+        # ACTUAL
+        # Total Nilai Pengajuan
+        # ==================================
+
+        actual = 0
+
+        if (
+            "Uraian Pengajuan" in df.columns
+            and
+            "Nilai Pengajuan" in df.columns
+        ):
+
+            actual_data = df[
+                ~df["Uraian Pengajuan"]
+                .astype(str)
+                .str.contains(
+                    "Nilai PKS",
+                    case=False,
+                    na=False
+                )
+            ]
+
+            actual = pd.to_numeric(
+                actual_data["Nilai Pengajuan"],
+                errors="coerce"
+            ).fillna(0).sum()
+
+        # ==================================
+        # SIMPAN
+        # ==================================
+
+        results.append({
+            "Program": program,
+            "Target": target,
+            "Actual": actual
+        })
+
+    return pd.DataFrame(results)
+
+
+# ==========================================
+# FINANCIAL PERFORMANCE CHART
+# ==========================================
+
+def create_financial_chart(df):
+
+    fig = go.Figure()
+
+    # TARGET
+    fig.add_trace(
+        go.Bar(
+            name="Target",
+            x=df["Program"],
+            y=df["Target"],
+            text=df["Target"],
+            texttemplate="Rp %{text:,.0f}",
+            textposition="outside"
+        )
+    )
+
+    # ACTUAL
+    fig.add_trace(
+        go.Bar(
+            name="Actual",
+            x=df["Program"],
+            y=df["Actual"],
+            text=df["Actual"],
+            texttemplate="Rp %{text:,.0f}",
+            textposition="outside"
+        )
+    )
+
+    fig.update_layout(
+        title="Financial Performance",
+
+        xaxis_title="Nama Program",
+
+        yaxis_title="Total (Rp)",
+
+        barmode="group",
+
+        plot_bgcolor="white",
+
+        paper_bgcolor="white",
+
+        font=dict(
+            color="#17365D"
+        ),
+
+        legend=dict(
+            title="Keterangan"
+        ),
+
+        yaxis=dict(
+            tickformat=","
+        ),
+
+        margin=dict(
+            l=50,
+            r=30,
+            t=70,
+            b=50
+        )
+    )
+
+    return fig
