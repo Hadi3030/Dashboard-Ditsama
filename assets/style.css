@@ -1,0 +1,102 @@
+/* ================================
+   GLOBAL
+================================ */
+
+.stApp {
+    background-color: #ffffff;
+}
+
+
+/* ================================
+   SIDEBAR / CONTROL
+================================ */
+
+section[data-testid="stSidebar"] {
+    background-color: #17365D;
+}
+
+section[data-testid="stSidebar"] * {
+    color: white !important;
+}
+
+
+/* ================================
+   MAIN CONTENT
+================================ */
+
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+
+/* ================================
+   TITLE
+================================ */
+
+h1 {
+    color: #17365D;
+    font-weight: 700;
+}
+
+h2, h3 {
+    color: #17365D;
+}
+
+
+/* ================================
+   KPI CARD
+================================ */
+
+div[data-testid="metric-container"] {
+    background-color: white;
+    border: 1px solid #D9E2F3;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+}
+
+
+/* ================================
+   BUTTON
+================================ */
+
+.stButton > button {
+    background-color: #17365D;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+}
+
+.stButton > button:hover {
+    background-color: #244F7D;
+    color: white;
+}
+
+
+/* ================================
+   SELECTBOX
+================================ */
+
+div[data-baseweb="select"] > div {
+    border-radius: 8px;
+}
+
+
+/* ================================
+   DATAFRAME
+================================ */
+
+div[data-testid="stDataFrame"] {
+    border-radius: 10px;
+}
+
+
+/* ================================
+   INFO BOX
+================================ */
+
+div[data-testid="stAlert"] {
+    border-radius: 10px;
+}
