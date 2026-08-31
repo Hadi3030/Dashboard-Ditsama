@@ -94,9 +94,17 @@ div[data-testid="stDataFrame"] {
 
 
 /* ================================
-   INFO BOX
+   INFO / PLACEHOLDER BOX
 ================================ */
 
 div[data-testid="stAlert"] {
+    background-color: #17365D !important;
     border-radius: 10px;
+    border: none;
+    color: white !important;
+    padding: 20px;
+}
+
+div[data-testid="stAlert"] p {
+    color: white !important;
 }
