@@ -158,11 +158,15 @@ def extract_financial_performance(sheets):
 
     results = []
 
+    # =====================================================
+    # BACA SEMUA SHEET
+    # =====================================================
+
     for sheet_name, df in sheets.items():
 
-        # =================================================
-        # BACA INFORMASI PROGRAM DARI NAMA SHEET
-        # =================================================
+        # -------------------------------------------------
+        # Ambil informasi program dari nama sheet
+        # -------------------------------------------------
 
         info = extract_program_info(
             sheet_name
@@ -171,15 +175,15 @@ def extract_financial_performance(sheets):
         if info is None:
             continue
 
-        # =================================================
-        # COPY DATAFRAME
-        # =================================================
+        # -------------------------------------------------
+        # COPY DATA
+        # -------------------------------------------------
 
         df = df.copy()
 
-        # =================================================
-        # BERSIHKAN HEADER
-        # =================================================
+        # -------------------------------------------------
+        # Bersihkan nama kolom
+        # -------------------------------------------------
 
         df.columns = (
             df.columns
@@ -207,11 +211,11 @@ def extract_financial_performance(sheets):
 
                 uraian_col = col
 
-            if "nilai pengajuan" in col_clean:
+            elif "nilai pengajuan" in col_clean:
 
                 pengajuan_col = col
 
-            if "saldo" in col_clean:
+            elif "saldo" in col_clean:
 
                 saldo_col = col
 
@@ -237,6 +241,9 @@ def extract_financial_performance(sheets):
 
                 row = target_rows.iloc[0]
 
+                # Cari angka terbesar
+                # pada baris Nilai PKS
+
                 for value in row:
 
                     number = clean_number(
@@ -250,28 +257,37 @@ def extract_financial_performance(sheets):
         # =================================================
         # TOTAL NILAI PENGAJUAN
         # =================================================
+        #
+        # ATURAN:
+        #
+        # Excel baris 1-6
+        #     tidak dihitung
+        #
+        # Excel baris 7
+        #     mulai dihitung
+        #
+        # Excel baris 7 sampai terakhir
+        #     dijumlahkan
+        #
+        # DPKS otomatis tidak masuk
+        # karena berada sebelum baris 7.
+        # =================================================
 
         total_pengajuan = 0
 
-        if (
-            uraian_col is not None
-            and
-            pengajuan_col is not None
-        ):
+        if pengajuan_col is not None:
 
-            actual_rows = df[
-                ~df[uraian_col]
-                .astype(str)
-                .str.contains(
-                    "nilai pks",
-                    case=False,
-                    na=False
-                )
-            ]
+            # Mulai dari dataframe index ke-6
+            # = Excel row 7 jika header sudah
+            # dibaca sebagai header dataframe.
 
-            for value in actual_rows[
-                pengajuan_col
-            ]:
+            pengajuan_values = (
+                df[
+                    pengajuan_col
+                ].iloc[6:]
+            )
+
+            for value in pengajuan_values:
 
                 total_pengajuan += (
                     clean_number(value)
@@ -280,35 +296,38 @@ def extract_financial_performance(sheets):
         # =================================================
         # SALDO TERAKHIR
         # =================================================
+        #
+        # BUKAN dijumlahkan.
+        #
+        # Yang diambil adalah saldo terakhir
+        # yang memiliki nilai.
+        # =================================================
 
         saldo_terakhir = 0
 
         if saldo_col is not None:
 
-            saldo_values = []
+            saldo_values = (
+                df[
+                    saldo_col
+                ]
+                .apply(clean_number)
+            )
 
-            for value in df[
-                saldo_col
-            ]:
+            # Buang nilai kosong / 0
 
-                number = clean_number(
-                    value
-                )
+            saldo_valid = saldo_values[
+                saldo_values != 0
+            ]
 
-                if number != 0:
-
-                    saldo_values.append(
-                        number
-                    )
-
-            if saldo_values:
+            if not saldo_valid.empty:
 
                 saldo_terakhir = (
-                    saldo_values[-1]
+                    saldo_valid.iloc[-1]
                 )
 
         # =================================================
-        # PERSENTASE
+        # PERSENTASE PENGGUNAAN
         # =================================================
 
         if target > 0:
@@ -323,7 +342,7 @@ def extract_financial_performance(sheets):
             percentage = 0
 
         # =================================================
-        # SIMPAN
+        # SIMPAN HASIL
         # =================================================
 
         results.append({
@@ -357,7 +376,7 @@ def extract_financial_performance(sheets):
         })
 
     # =====================================================
-    # BUAT DATAFRAME
+    # DATAFRAME HASIL
     # =====================================================
 
     result_df = pd.DataFrame(
@@ -365,7 +384,7 @@ def extract_financial_performance(sheets):
     )
 
     # =====================================================
-    # PEMBERSIHAN TERAKHIR NAMA PROGRAM
+    # BERSIHKAN NAMA PROGRAM
     # =====================================================
 
     if not result_df.empty:
@@ -379,7 +398,7 @@ def extract_financial_performance(sheets):
                 regex=True
             )
             .str.replace(
-                r"</?\s*[a-zA-Z][^>]*",
+                r"</?[^>]+>",
                 "",
                 regex=True
             )
@@ -390,13 +409,13 @@ def extract_financial_performance(sheets):
             .str.strip()
         )
 
-        # Hapus baris program kosong
+        # Hapus program kosong
+
         result_df = result_df[
             result_df["Program"] != ""
         ]
 
     return result_df
-
 
 # =========================================================
 # FORMAT RUPIAH
