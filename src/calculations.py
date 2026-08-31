@@ -614,3 +614,118 @@ def create_financial_chart(df):
     )
 
     return fig
+
+# =========================================================
+# CREATE FINANCIAL CHART
+# =========================================================
+
+def create_financial_chart(df):
+
+    fig = go.Figure()
+
+    if df.empty:
+        return fig
+
+    chart_df = df.copy()
+
+    # Pastikan angka numerik
+    chart_df["Target"] = pd.to_numeric(
+        chart_df["Target"],
+        errors="coerce"
+    ).fillna(0)
+
+    chart_df["Actual"] = pd.to_numeric(
+        chart_df["Actual"],
+        errors="coerce"
+    ).fillna(0)
+
+    # =====================================================
+    # TARGET
+    # =====================================================
+
+    fig.add_trace(
+        go.Bar(
+            x=chart_df["Program"],
+            y=chart_df["Target"],
+            name="Target"
+        )
+    )
+
+    # =====================================================
+    # ACTUAL
+    # =====================================================
+
+    fig.add_trace(
+        go.Bar(
+            x=chart_df["Program"],
+            y=chart_df["Actual"],
+            name="Actual"
+        )
+    )
+
+    # =====================================================
+    # FORMAT SUMBU Y INDONESIA
+    # =====================================================
+
+    max_value = max(
+        chart_df["Target"].max(),
+        chart_df["Actual"].max()
+    )
+
+    tick_step = max_value / 5
+
+    tickvals = [
+        tick_step * i
+        for i in range(6)
+    ]
+
+    def format_axis(value):
+
+        if value >= 1_000_000_000:
+            angka = value / 1_000_000_000
+            return f"Rp{angka:g} M"
+
+        elif value >= 1_000_000:
+            angka = value / 1_000_000
+            return f"Rp{angka:g} Jt"
+
+        elif value >= 1_000:
+            angka = value / 1_000
+            return f"Rp{angka:g} Rb"
+
+        else:
+            return f"Rp{value:g}"
+
+    ticktext = [
+        format_axis(value)
+        for value in tickvals
+    ]
+
+    # =====================================================
+    # LAYOUT
+    # =====================================================
+
+    fig.update_layout(
+        barmode="group",
+        height=350,
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=80
+        ),
+        xaxis_title="Program",
+        yaxis_title="Nilai",
+        legend_title="Financial Performance"
+    )
+
+    # =====================================================
+    # TERAPKAN FORMAT SUMBU Y
+    # =====================================================
+
+    fig.update_yaxes(
+        tickvals=tickvals,
+        ticktext=ticktext
+    )
+
+    return fig
