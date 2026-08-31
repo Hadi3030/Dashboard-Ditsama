@@ -159,13 +159,13 @@ def extract_financial_performance(sheets):
     results = []
 
     # =====================================================
-    # BACA SEMUA SHEET
+    # PROSES SEMUA SHEET
     # =====================================================
 
-    for sheet_name, df in sheets.items():
+    for sheet_name, raw_df in sheets.items():
 
         # -------------------------------------------------
-        # Ambil informasi program dari nama sheet
+        # Ambil informasi dari nama sheet
         # -------------------------------------------------
 
         info = extract_program_info(
@@ -176,19 +176,67 @@ def extract_financial_performance(sheets):
             continue
 
         # -------------------------------------------------
-        # COPY DATA
+        # Copy dataframe
         # -------------------------------------------------
 
-        df = df.copy()
+        df = raw_df.copy()
+
+        # =================================================
+        # CARI BARIS HEADER
+        # =================================================
+
+        header_row = None
+
+        for i in range(len(df)):
+
+            row_text = " ".join(
+                df.iloc[i]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .tolist()
+            ).lower()
+
+            if (
+                "uraian pengajuan" in row_text
+                and
+                "nilai pengajuan" in row_text
+                and
+                "saldo" in row_text
+            ):
+
+                header_row = i
+                break
 
         # -------------------------------------------------
-        # Bersihkan nama kolom
+        # Jika header tidak ditemukan
         # -------------------------------------------------
+
+        if header_row is None:
+            continue
+
+        # =================================================
+        # SET HEADER
+        # =================================================
 
         df.columns = (
-            df.columns
+            df.iloc[header_row]
+            .fillna("")
             .astype(str)
             .str.strip()
+        )
+
+        # Ambil data setelah header
+
+        df = df.iloc[
+            header_row + 1:
+        ].copy()
+
+        # Reset index
+
+        df.reset_index(
+            drop=True,
+            inplace=True
         )
 
         # =================================================
@@ -207,44 +255,90 @@ def extract_financial_performance(sheets):
                 .lower()
             )
 
-            if "uraian" in col_clean:
+            if (
+                "uraian pengajuan"
+                in col_clean
+            ):
 
                 uraian_col = col
 
-            elif "nilai pengajuan" in col_clean:
+            elif (
+                "nilai pengajuan"
+                in col_clean
+            ):
 
                 pengajuan_col = col
 
-            elif "saldo" in col_clean:
+            elif (
+                col_clean == "saldo"
+                or
+                "saldo" in col_clean
+            ):
 
                 saldo_col = col
 
+        # -------------------------------------------------
+        # Pastikan kolom tersedia
+        # -------------------------------------------------
+
+        if (
+            uraian_col is None
+            or
+            pengajuan_col is None
+            or
+            saldo_col is None
+        ):
+
+            continue
+
         # =================================================
-        # TARGET / NILAI PKS
+        # CARI BARIS NILAI PKS
         # =================================================
 
         target = 0
 
-        if uraian_col is not None:
+        target_index = None
 
-            target_rows = df[
-                df[uraian_col]
-                .astype(str)
-                .str.contains(
-                    "nilai pks",
-                    case=False,
-                    na=False
-                )
-            ]
+        pks_mask = (
+            df[uraian_col]
+            .astype(str)
+            .str.strip()
+            .str.contains(
+                r"nilai\s+pks",
+                case=False,
+                na=False,
+                regex=True
+            )
+        )
 
-            if not target_rows.empty:
+        pks_rows = df[
+            pks_mask
+        ]
 
-                row = target_rows.iloc[0]
+        if not pks_rows.empty:
 
-                # Cari angka terbesar
-                # pada baris Nilai PKS
+            target_index = (
+                pks_rows.index[0]
+            )
 
-                for value in row:
+            # Nilai PKS berada di kolom Saldo
+            target = clean_number(
+                df.loc[
+                    target_index,
+                    saldo_col
+                ]
+            )
+
+            # Jika tidak ditemukan di saldo,
+            # cari angka terbesar pada baris tersebut
+
+            if target == 0:
+
+                for value in (
+                    df.loc[
+                        target_index
+                    ]
+                ):
 
                     number = clean_number(
                         value
@@ -255,86 +349,102 @@ def extract_financial_performance(sheets):
                         target = number
 
         # =================================================
-        # TOTAL NILAI PENGAJUAN
+        # CARI BARIS DPKS
         # =================================================
-        #
-        # ATURAN:
-        #
-        # Excel baris 1-6
-        #     tidak dihitung
-        #
-        # Excel baris 7
-        #     mulai dihitung
-        #
-        # Excel baris 7 sampai terakhir
-        #     dijumlahkan
-        #
-        # DPKS otomatis tidak masuk
-        # karena berada sebelum baris 7.
+
+        dpks_mask = (
+            df[uraian_col]
+            .astype(str)
+            .str.strip()
+            .str.contains(
+                r"^dpks$",
+                case=False,
+                na=False,
+                regex=True
+            )
+        )
+
+        dpks_rows = df[
+            dpks_mask
+        ]
+
+        # =================================================
+        # TOTAL NILAI PENGAJUAN
         # =================================================
 
         total_pengajuan = 0
 
-        if pengajuan_col is not None:
+        if not dpks_rows.empty:
 
-            # Mulai dari dataframe index ke-6
-            # = Excel row 7 jika header sudah
-            # dibaca sebagai header dataframe.
+            # Ambil data SETELAH DPKS
 
-            pengajuan_values = (
-                df[
-                    pengajuan_col
-                ].iloc[6:]
+            dpks_index = (
+                dpks_rows.index[0]
             )
 
-            for value in pengajuan_values:
+            actual_df = df.loc[
+                dpks_index + 1:
+            ]
 
-                total_pengajuan += (
-                    clean_number(value)
-                )
+        elif target_index is not None:
+
+            # Jika DPKS tidak ada,
+            # mulai setelah Nilai PKS
+
+            actual_df = df.loc[
+                target_index + 1:
+            ]
+
+        else:
+
+            actual_df = df.copy()
+
+        # -------------------------------------------------
+        # Jumlahkan Nilai Pengajuan
+        # -------------------------------------------------
+
+        for value in actual_df[
+            pengajuan_col
+        ]:
+
+            total_pengajuan += (
+                clean_number(value)
+            )
 
         # =================================================
         # SALDO TERAKHIR
         # =================================================
-        #
-        # BUKAN dijumlahkan.
-        #
-        # Yang diambil adalah saldo terakhir
-        # yang memiliki nilai.
-        # =================================================
 
         saldo_terakhir = 0
 
-        if saldo_col is not None:
+        # Ambil seluruh saldo
+        # lalu cari nilai numerik terakhir
 
-            saldo_values = (
-                df[
-                    saldo_col
-                ]
-                .apply(clean_number)
+        saldo_values = (
+            df[saldo_col]
+            .apply(clean_number)
+        )
+
+        saldo_valid = saldo_values[
+            saldo_values != 0
+        ]
+
+        if not saldo_valid.empty:
+
+            saldo_terakhir = (
+                saldo_valid.iloc[-1]
             )
 
-            # Buang nilai kosong / 0
-
-            saldo_valid = saldo_values[
-                saldo_values != 0
-            ]
-
-            if not saldo_valid.empty:
-
-                saldo_terakhir = (
-                    saldo_valid.iloc[-1]
-                )
-
         # =================================================
-        # PERSENTASE PENGGUNAAN
+        # PERSENTASE
         # =================================================
 
         if target > 0:
 
             percentage = (
                 total_pengajuan
-                / target
+                /
+                target
             ) * 100
 
         else:
@@ -342,7 +452,7 @@ def extract_financial_performance(sheets):
             percentage = 0
 
         # =================================================
-        # SIMPAN HASIL
+        # SIMPAN
         # =================================================
 
         results.append({
@@ -376,7 +486,7 @@ def extract_financial_performance(sheets):
         })
 
     # =====================================================
-    # DATAFRAME HASIL
+    # BUAT DATAFRAME
     # =====================================================
 
     result_df = pd.DataFrame(
@@ -392,20 +502,35 @@ def extract_financial_performance(sheets):
         result_df["Program"] = (
             result_df["Program"]
             .astype(str)
+
+            # Hapus HTML tag
             .str.replace(
                 r"<[^>]*>",
                 "",
                 regex=True
             )
+
+            # Hapus sisa HTML
             .str.replace(
-                r"</?[^>]+>",
+                r"</?\s*[^>]+>",
                 "",
                 regex=True
             )
-            .str.split(
-                "<"
+
+            # Hapus slash di akhir
+            .str.replace(
+                r"/+$",
+                "",
+                regex=True
             )
-            .str[0]
+
+            # Hapus spasi berlebih
+            .str.replace(
+                r"\s+",
+                " ",
+                regex=True
+            )
+
             .str.strip()
         )
 
@@ -416,195 +541,3 @@ def extract_financial_performance(sheets):
         ]
 
     return result_df
-
-# =========================================================
-# FORMAT RUPIAH
-# =========================================================
-
-def format_rupiah(value):
-
-    if value >= 1_000_000_000:
-
-        return (
-            f"Rp {value / 1_000_000_000:.1f} M"
-        )
-
-    elif value >= 1_000_000:
-
-        return (
-            f"Rp {value / 1_000_000:.1f} Jt"
-        )
-
-    elif value >= 1_000:
-
-        return (
-            f"Rp {value / 1_000:.1f} Rb"
-        )
-
-    else:
-
-        return (
-            f"Rp {value:,.0f}"
-        )
-
-
-# =========================================================
-# FINANCIAL CHART
-# =========================================================
-
-def create_financial_chart(df):
-
-    fig = go.Figure()
-
-    # =====================================================
-    # TOTAL NILAI PENGAJUAN
-    # =====================================================
-
-    fig.add_trace(
-        go.Bar(
-
-            name="Total Nilai Pengajuan",
-
-            x=df["Program"],
-
-            y=df["Total Pengajuan"],
-
-            text=[
-                format_rupiah(x)
-                for x in df[
-                    "Total Pengajuan"
-                ]
-            ],
-
-            textposition="outside",
-
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Total Nilai Pengajuan: "
-                "Rp %{y:,.0f}"
-                "<extra></extra>"
-            )
-        )
-    )
-
-    # =====================================================
-    # SALDO TERAKHIR
-    # =====================================================
-
-    fig.add_trace(
-        go.Bar(
-
-            name="Saldo Terakhir",
-
-            x=df["Program"],
-
-            y=df["Saldo Terakhir"],
-
-            text=[
-                format_rupiah(x)
-                for x in df[
-                    "Saldo Terakhir"
-                ]
-            ],
-
-            textposition="outside",
-
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Saldo Terakhir: "
-                "Rp %{y:,.0f}"
-                "<extra></extra>"
-            )
-        )
-    )
-
-    # =====================================================
-    # LAYOUT
-    # =====================================================
-
-    fig.update_layout(
-
-        title=dict(
-
-            text="Financial Performance",
-
-            font=dict(
-                size=20,
-                color="#17365D"
-            )
-        ),
-
-        xaxis=dict(
-
-            title=dict(
-
-                text="Nama Program",
-
-                font=dict(
-                    size=14,
-                    color="#17365D"
-                )
-            ),
-
-            tickfont=dict(
-                size=12,
-                color="#17365D"
-            )
-        ),
-
-        yaxis=dict(
-
-            title=dict(
-
-                text="Total (Rupiah)",
-
-                font=dict(
-                    size=14,
-                    color="#17365D"
-                )
-            ),
-
-            tickfont=dict(
-                size=12,
-                color="#17365D"
-            ),
-
-            tickformat=","
-        ),
-
-        barmode="group",
-
-        plot_bgcolor="white",
-
-        paper_bgcolor="white",
-
-        font=dict(
-            color="#17365D"
-        ),
-
-        legend=dict(
-
-            title=dict(
-
-                text="Keterangan",
-
-                font=dict(
-                    color="#17365D"
-                )
-            ),
-
-            font=dict(
-                color="#17365D",
-                size=12
-            )
-        ),
-
-        margin=dict(
-            l=80,
-            r=40,
-            t=90,
-            b=100
-        )
-    )
-
-    return fig
