@@ -3,7 +3,12 @@ import pandas as pd
 
 from src.load_data import load_all_data
 from src.calculations import calculate_dashboard
-
+from config.data_sources import EXCEL_URLS
+from src.load_data import load_excel_sheets
+from src.calculations import (
+    extract_financial_performance,
+    create_financial_chart
+)
 
 sheets = load_excel_sheets(
     EXCEL_URLS["financial"]
