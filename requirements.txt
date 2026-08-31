@@ -4,3 +4,5 @@ pandas
 pyxlsb
 python-docx
 docx2pdf
+plotly
+requests
