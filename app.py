@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-from src.load_data import load_excel_sheets
+from src.load_data import load_all_sheets
 from src.calculations import (
     extract_financial_performance,
     create_financial_chart
@@ -79,8 +79,8 @@ refresh = st.sidebar.button(
 
 try:
 
-    sheets = load_excel_sheets(
-        EXCEL_URLS["financial"]
+    sheets = load_all_sheets(
+    EXCEL_URLS["financial"]
     )
 
     financial_df = extract_financial_performance(
