@@ -541,3 +541,76 @@ def extract_financial_performance(sheets):
         ]
 
     return result_df
+
+# =========================================================
+# CREATE FINANCIAL CHART
+# =========================================================
+
+def create_financial_chart(df):
+
+    fig = go.Figure()
+
+    if df.empty:
+        return fig
+
+    chart_df = df.copy()
+
+    # Pastikan angka numerik
+    chart_df["Target"] = pd.to_numeric(
+        chart_df["Target"],
+        errors="coerce"
+    ).fillna(0)
+
+    chart_df["Actual"] = pd.to_numeric(
+        chart_df["Actual"],
+        errors="coerce"
+    ).fillna(0)
+
+    chart_df["Saldo Terakhir"] = pd.to_numeric(
+        chart_df["Saldo Terakhir"],
+        errors="coerce"
+    ).fillna(0)
+
+    # =====================================================
+    # TARGET
+    # =====================================================
+
+    fig.add_trace(
+        go.Bar(
+            x=chart_df["Program"],
+            y=chart_df["Target"],
+            name="Target"
+        )
+    )
+
+    # =====================================================
+    # ACTUAL
+    # =====================================================
+
+    fig.add_trace(
+        go.Bar(
+            x=chart_df["Program"],
+            y=chart_df["Actual"],
+            name="Actual"
+        )
+    )
+
+    # =====================================================
+    # LAYOUT
+    # =====================================================
+
+    fig.update_layout(
+        barmode="group",
+        height=350,
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=80
+        ),
+        xaxis_title="Program",
+        yaxis_title="Nilai",
+        legend_title="Financial Performance"
+    )
+
+    return fig
