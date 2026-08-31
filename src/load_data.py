@@ -1,23 +1,30 @@
 import pandas as pd
-from pathlib import Path
 
 
-DATA_FOLDER = Path("data")
+def get_sheet_data(spreadsheet_id, sheet_name):
+    """
+    Membaca satu sheet Google Sheets sebagai DataFrame.
+    """
+
+    url = (
+        f"https://docs.google.com/spreadsheets/d/"
+        f"{spreadsheet_id}/gviz/tq"
+        f"?tqx=out:csv&sheet={sheet_name}"
+    )
+
+    return pd.read_csv(url)
 
 
-def load_excel_file(file_path):
+def get_all_sheets(spreadsheet_id):
+    """
+    Mengambil daftar nama sheet dari Google Sheets.
+    """
 
-    return pd.read_excel(file_path)
+    url = (
+        f"https://docs.google.com/spreadsheets/d/"
+        f"{spreadsheet_id}/edit"
+    )
 
-
-def load_all_data():
-
-    files = list(DATA_FOLDER.glob("*.xlsx"))
-
-    data = {}
-
-    for file in files:
-
-        data[file.stem] = pd.read_excel(file)
-
-    return data
+    # Daftar sheet akan kita masukkan/ambil secara otomatis
+    # setelah koneksi spreadsheet berhasil.
+    return url
