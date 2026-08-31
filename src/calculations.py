@@ -35,7 +35,23 @@ def extract_program_info(sheet_name):
     tanggal = int(match.group(1))
     bulan = int(match.group(2))
     tahun = int(match.group(3))
+
     program = match.group(4).strip()
+
+    # Bersihkan HTML
+    program = re.sub(
+        r"<[^>]*>",
+        "",
+        program
+    )
+
+    # Bersihkan HTML entity
+    program = (
+        program
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .strip()
+    )
 
     return {
         "Tanggal": tanggal,
@@ -43,7 +59,6 @@ def extract_program_info(sheet_name):
         "Tahun": tahun,
         "Program": program
     }
-
 
 # =========================================================
 # MEMBERSIHKAN ANGKA RUPIAH
