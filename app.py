@@ -83,28 +83,37 @@ with col4:
 
 
 # ==========================================
-# FINANCIAL
+# FINANCIAL PERFORMANCE & PARTICIPANT TARGET
 # ==========================================
 
-st.subheader("Financial Performance")
+col_left, col_right = st.columns(2)
 
-st.info(
-    "Data financial performance akan "
-    "dihubungkan setelah sumber Excel selesai dibuat."
-)
+# ------------------------------------------
+# FINANCIAL PERFORMANCE
+# ------------------------------------------
+
+with col_left:
+
+    st.subheader("Financial Performance")
+
+    st.info(
+        "Data financial performance akan "
+        "ditampilkan di sini."
+    )
 
 
-# ==========================================
-# PROGRAM PROGRESS
-# ==========================================
+# ------------------------------------------
+# PARTICIPANT TARGET
+# ------------------------------------------
 
-st.subheader("Program Progress")
+with col_right:
 
-st.info(
-    "Data progress program akan "
-    "dihubungkan setelah sumber Excel selesai dibuat."
-)
+    st.subheader("Participant Target")
 
+    st.info(
+        "Data participant target akan "
+        "ditampilkan di sini."
+    )
 
 # ==========================================
 # MANAGEMENT ALERT
