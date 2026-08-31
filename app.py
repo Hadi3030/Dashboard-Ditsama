@@ -155,7 +155,7 @@ try:
     )
 
     financial_chart = create_financial_chart(
-        financial_df
+        filtered_df
     )
 
     data_status = True
