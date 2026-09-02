@@ -938,7 +938,6 @@ def extract_program_info(sheet_name):
 
     sheet_name = str(sheet_name)
 
-
     # -----------------------------------------------------
     # Bersihkan HTML
     # -----------------------------------------------------
@@ -956,7 +955,6 @@ def extract_program_info(sheet_name):
         .strip()
     )
 
-
     # -----------------------------------------------------
     # Pattern nama sheet
     # -----------------------------------------------------
@@ -969,36 +967,23 @@ def extract_program_info(sheet_name):
         r"(.+)"
     )
 
-
     match = re.match(
         pattern,
         sheet_name,
         re.IGNORECASE
     )
 
-
     if not match:
-
         return None
 
-
-    tanggal = int(
-        match.group(1)
-    )
-
-    bulan = int(
-        match.group(2)
-    )
-
-    tahun = int(
-        match.group(3)
-    )
+    tanggal = int(match.group(1))
+    bulan = int(match.group(2))
+    tahun = int(match.group(3))
 
     program = (
         match.group(4)
         .strip()
     )
-
 
     # -----------------------------------------------------
     # Bersihkan program
@@ -1025,23 +1010,16 @@ def extract_program_info(sheet_name):
         .strip()
     )
 
-
     program = re.split(
         r"<|&lt;",
         program
     )[0].strip()
 
-
     return {
-
         "Tanggal": tanggal,
-
         "Bulan": bulan,
-
         "Tahun": tahun,
-
         "Program": program
-
     }
 
 
@@ -1051,8 +1029,7 @@ def extract_program_info(sheet_name):
 
 def clean_number(value):
     """
-    Mengubah angka/currency Indonesia
-    menjadi float.
+    Mengubah angka/currency Indonesia menjadi float.
 
     Contoh:
     Rp 1.500.000 -> 1500000
@@ -1061,20 +1038,15 @@ def clean_number(value):
     """
 
     if pd.isna(value):
-
         return 0
 
-
-    if isinstance(
-        value,
-        (int, float)
-    ):
-
+    if isinstance(value, (int, float)):
         return float(value)
 
+    value = str(value).strip()
 
-    value = str(value)
-
+    if value == "":
+        return 0
 
     value = (
         value
@@ -1083,28 +1055,13 @@ def clean_number(value):
         .replace(" ", "")
     )
 
-
-    # -----------------------------------------------------
     # Format Indonesia
-    # -----------------------------------------------------
-
-    value = value.replace(
-        ".",
-        ""
-    )
-
-    value = value.replace(
-        ",",
-        "."
-    )
-
+    value = value.replace(".", "")
+    value = value.replace(",", ".")
 
     try:
-
         return float(value)
-
-    except:
-
+    except (ValueError, TypeError):
         return 0
 
 
@@ -1116,7 +1073,6 @@ def extract_financial_performance(sheets):
 
     results = []
 
-
     # =====================================================
     # LOOP SHEET
     # =====================================================
@@ -1127,18 +1083,15 @@ def extract_financial_performance(sheets):
         # Ambil informasi program
         # -------------------------------------------------
 
-        info = extract_program_info(
-            sheet_name
-        )
-
+        info = extract_program_info(sheet_name)
 
         if info is None:
-
             continue
-
 
         df = raw_df.copy()
 
+        if df.empty:
+            continue
 
         # =================================================
         # CARI HEADER
@@ -1146,84 +1099,56 @@ def extract_financial_performance(sheets):
 
         header_row = None
 
-
-        for i in range(
-            len(df)
-        ):
+        for i in range(len(df)):
 
             row_text = " ".join(
-
                 df.iloc[i]
                 .fillna("")
                 .astype(str)
                 .str.strip()
                 .tolist()
-
             ).lower()
 
-
             if (
-                "uraian pengajuan"
-                in row_text
-
+                "uraian pengajuan" in row_text
                 and
-
-                "nilai pengajuan"
-                in row_text
-
+                "nilai pengajuan" in row_text
                 and
-
-                "saldo"
-                in row_text
+                "saldo" in row_text
             ):
-
                 header_row = i
-
                 break
 
-
         if header_row is None:
-
             continue
-
 
         # =================================================
         # SET HEADER
         # =================================================
 
         df.columns = (
-
-            df.iloc[
-                header_row
-            ]
+            df.iloc[header_row]
             .fillna("")
             .astype(str)
             .str.strip()
-
         )
-
 
         df = df.iloc[
             header_row + 1:
         ].copy()
-
 
         df.reset_index(
             drop=True,
             inplace=True
         )
 
-
         # =================================================
         # CARI KOLOM
         # =================================================
 
         uraian_col = None
-
         pengajuan_col = None
-
         saldo_col = None
-
 
         for col in df.columns:
 
@@ -1233,22 +1158,13 @@ def extract_financial_performance(sheets):
                 .lower()
             )
 
-
-            if (
-                "uraian pengajuan"
-                in col_clean
-            ):
+            if "uraian pengajuan" in col_clean:
 
                 uraian_col = col
 
-
-            elif (
-                "nilai pengajuan"
-                in col_clean
-            ):
+            elif "nilai pengajuan" in col_clean:
 
                 pengajuan_col = col
-
 
             elif (
                 col_clean == "saldo"
@@ -1258,7 +1174,6 @@ def extract_financial_performance(sheets):
 
                 saldo_col = col
 
-
         if (
             uraian_col is None
             or
@@ -1266,21 +1181,16 @@ def extract_financial_performance(sheets):
             or
             saldo_col is None
         ):
-
             continue
-
 
         # =================================================
         # CARI NILAI PKS
         # =================================================
 
         target = 0
-
         target_index = None
 
-
         pks_mask = (
-
             df[uraian_col]
             .astype(str)
             .str.strip()
@@ -1290,31 +1200,20 @@ def extract_financial_performance(sheets):
                 na=False,
                 regex=True
             )
-
         )
 
-
-        pks_rows = df[
-            pks_mask
-        ]
-
+        pks_rows = df[pks_mask]
 
         if not pks_rows.empty:
 
-            target_index = (
-                pks_rows.index[0]
-            )
-
+            target_index = pks_rows.index[0]
 
             target = clean_number(
-
                 df.loc[
                     target_index,
                     saldo_col
                 ]
-
             )
-
 
             # -------------------------------------------------
             # Jika saldo kosong, cari angka terbesar
@@ -1323,27 +1222,19 @@ def extract_financial_performance(sheets):
             if target == 0:
 
                 for value in (
-                    df.loc[
-                        target_index
-                    ]
+                    df.loc[target_index]
                 ):
 
-                    number = clean_number(
-                        value
-                    )
-
+                    number = clean_number(value)
 
                     if number > target:
-
                         target = number
-
 
         # =================================================
         # CARI DPKS
         # =================================================
 
         dpks_mask = (
-
             df[uraian_col]
             .astype(str)
             .str.strip()
@@ -1353,14 +1244,9 @@ def extract_financial_performance(sheets):
                 na=False,
                 regex=True
             )
-
         )
 
-
-        dpks_rows = df[
-            dpks_mask
-        ]
-
+        dpks_rows = df[dpks_mask]
 
         # =================================================
         # TENTUKAN DATA ACTUAL
@@ -1368,14 +1254,11 @@ def extract_financial_performance(sheets):
 
         if not dpks_rows.empty:
 
-            dpks_index = (
-                dpks_rows.index[0]
-            )
+            dpks_index = dpks_rows.index[0]
 
             actual_df = df.loc[
                 dpks_index + 1:
             ]
-
 
         elif target_index is not None:
 
@@ -1383,11 +1266,9 @@ def extract_financial_performance(sheets):
                 target_index + 1:
             ]
 
-
         else:
 
             actual_df = df.copy()
-
 
         # =================================================
         # TOTAL PENGAJUAN
@@ -1395,17 +1276,11 @@ def extract_financial_performance(sheets):
 
         total_pengajuan = 0
 
-
         for value in (
-            actual_df[
-                pengajuan_col
-            ]
+            actual_df[pengajuan_col]
         ):
 
-            total_pengajuan += (
-                clean_number(value)
-            )
-
+            total_pengajuan += clean_number(value)
 
         # =================================================
         # SALDO TERAKHIR
@@ -1413,16 +1288,10 @@ def extract_financial_performance(sheets):
 
         saldo_terakhir = 0
 
-
         saldo_values = (
-
-            df[
-                saldo_col
-            ]
+            df[saldo_col]
             .apply(clean_number)
-
         )
-
 
         saldo_valid = (
             saldo_values[
@@ -1430,13 +1299,11 @@ def extract_financial_performance(sheets):
             ]
         )
 
-
         if not saldo_valid.empty:
 
             saldo_terakhir = (
                 saldo_valid.iloc[-1]
             )
-
 
         # =================================================
         # PERCENTAGE
@@ -1453,7 +1320,6 @@ def extract_financial_performance(sheets):
         else:
 
             percentage = 0
-
 
         # =================================================
         # SIMPAN
@@ -1490,15 +1356,12 @@ def extract_financial_performance(sheets):
 
         })
 
-
     # =====================================================
     # DATAFRAME
     # =====================================================
 
     result_df = pd.DataFrame(
-
         results,
-
         columns=[
             "Program",
             "Tanggal",
@@ -1510,9 +1373,7 @@ def extract_financial_performance(sheets):
             "Saldo Terakhir",
             "Percentage"
         ]
-
     )
-
 
     # =====================================================
     # CLEAN PROGRAM
@@ -1521,50 +1382,37 @@ def extract_financial_performance(sheets):
     if not result_df.empty:
 
         result_df["Program"] = (
-
             result_df["Program"]
             .astype(str)
-
             .str.replace(
                 r"<[^>]*>",
                 "",
                 regex=True
             )
-
             .str.replace(
                 r"</?\s*[^>]+>",
                 "",
                 regex=True
             )
-
             .str.replace(
                 r"/+$",
                 "",
                 regex=True
             )
-
             .str.replace(
                 r"\s+",
                 " ",
                 regex=True
             )
-
             .str.strip()
-
         )
-
 
         result_df = result_df[
             result_df["Program"] != ""
         ]
 
-
     return result_df
 
-
-# =========================================================
-# PARTICIPANT TARGET & ACTUAL
-# =========================================================
 
 # =========================================================
 # PARTICIPANT TARGET & ACTUAL
@@ -1575,11 +1423,18 @@ def extract_participant_target(sheets):
     Mengambil Participant Target dan Participant Actual
     HANYA dari sheet SIAP dan INSPIRASI.
 
-    Tidak mengambil data Financial Performance.
+    Fungsi ini tidak menggunakan data financial.
 
-    Header dicari berdasarkan nama kolom:
-    - Participant Target
-    - Participant Actual
+    Struktur data yang dicari:
+    - Tahun / Year
+    - Bulan / Month
+    - Tanggal / Date / Tgl
+    - Participant Target / Target Participant
+    - Participant Actual / Actual Participant
+
+    Data tahun dan bulan dapat berupa merged cell,
+    sehingga nilai terakhir akan diteruskan ke baris
+    berikutnya.
     """
 
     results = []
@@ -1629,7 +1484,6 @@ def extract_participant_target(sheets):
                 program = target_program
                 break
 
-        # Jika nama sheet mengandung SIAP / INSPIRASI
         if program is None:
 
             for target_program in target_programs:
@@ -1652,13 +1506,17 @@ def extract_participant_target(sheets):
             continue
 
         # =================================================
-        # CARI HEADER PARTICIPANT
+        # CARI HEADER
         # =================================================
 
         header_row = None
 
         target_col_index = None
         actual_col_index = None
+
+        # -------------------------------------------------
+        # Cari header Participant
+        # -------------------------------------------------
 
         for i in range(len(df)):
 
@@ -1673,39 +1531,62 @@ def extract_participant_target(sheets):
 
             for j, value in enumerate(row_values):
 
+                value_clean = (
+                    re.sub(
+                        r"\s+",
+                        " ",
+                        value
+                    )
+                    .strip()
+                )
+
                 # -----------------------------------------
                 # TARGET
                 # -----------------------------------------
 
                 if (
-                    "participant target" in value
+                    "participant target" in value_clean
                     or
-                    value == "target participant"
+                    value_clean == "target participant"
+                    or
+                    value_clean == "participant target (orang)"
+                    or
+                    value_clean == "target (orang)"
+                    or
+                    value_clean == "target"
                 ):
 
                     target_col_index = j
-                    header_row = i
+
+                    if header_row is None:
+                        header_row = i
 
                 # -----------------------------------------
                 # ACTUAL
                 # -----------------------------------------
 
                 if (
-                    "participant actual" in value
+                    "participant actual" in value_clean
                     or
-                    value == "actual participant"
+                    value_clean == "actual participant"
+                    or
+                    value_clean == "participant actual (orang)"
+                    or
+                    value_clean == "actual (orang)"
+                    or
+                    value_clean == "actual"
                 ):
 
                     actual_col_index = j
-                    header_row = i
 
-            # Jika keduanya sudah ditemukan
+                    if header_row is None:
+                        header_row = i
+
             if (
                 target_col_index is not None
                 and
                 actual_col_index is not None
             ):
-
                 break
 
         # =================================================
@@ -1719,7 +1600,6 @@ def extract_participant_target(sheets):
             or
             actual_col_index is None
         ):
-
             continue
 
         # =================================================
@@ -1741,24 +1621,37 @@ def extract_participant_target(sheets):
 
         for j, value in enumerate(header_values):
 
-            if value in [
+            value_clean = (
+                re.sub(
+                    r"\s+",
+                    " ",
+                    value
+                )
+                .strip()
+            )
+
+            # Tahun
+            if value_clean in [
                 "tahun",
                 "year"
             ]:
 
                 year_col_index = j
 
-            elif value in [
+            # Bulan
+            elif value_clean in [
                 "bulan",
                 "month"
             ]:
 
                 month_col_index = j
 
-            elif value in [
+            # Tanggal
+            elif value_clean in [
                 "tanggal",
                 "date",
-                "tgl"
+                "tgl",
+                "tanggal pelaksanaan"
             ]:
 
                 date_col_index = j
@@ -1811,9 +1704,23 @@ def extract_participant_target(sheets):
                             float(year_value)
                         )
 
-                    except:
+                    except (ValueError, TypeError):
 
-                        pass
+                        year_text = (
+                            str(year_value)
+                            .strip()
+                        )
+
+                        match_year = re.search(
+                            r"(20\d{2})",
+                            year_text
+                        )
+
+                        if match_year:
+
+                            current_year = int(
+                                match_year.group(1)
+                            )
 
             # -------------------------------------------------
             # BULAN
@@ -1837,6 +1744,12 @@ def extract_participant_target(sheets):
                         .lower()
                     )
 
+                    # Hilangkan titik
+                    month_text = month_text.replace(
+                        ".",
+                        ""
+                    )
+
                     if month_text in month_map:
 
                         current_month = (
@@ -1853,9 +1766,21 @@ def extract_participant_target(sheets):
                                 float(month_value)
                             )
 
-                        except:
+                        except (ValueError, TypeError):
 
-                            pass
+                            # Coba cari nama bulan
+                            for (
+                                month_name,
+                                month_number
+                            ) in month_map.items():
+
+                                if month_name in month_text:
+
+                                    current_month = (
+                                        month_number
+                                    )
+
+                                    break
 
             # -------------------------------------------------
             # TANGGAL
@@ -1875,15 +1800,55 @@ def extract_participant_target(sheets):
 
                     continue
 
-                try:
-
-                    tanggal = int(
-                        float(tanggal)
+                # Jika berupa datetime
+                if isinstance(
+                    tanggal,
+                    (
+                        pd.Timestamp,
+                        pd.DatetimeIndex
                     )
+                ):
 
-                except:
+                    try:
 
-                    continue
+                        tanggal = int(
+                            pd.Timestamp(tanggal).day
+                        )
+
+                    except Exception:
+
+                        continue
+
+                else:
+
+                    try:
+
+                        tanggal = int(
+                            float(tanggal)
+                        )
+
+                    except (ValueError, TypeError):
+
+                        tanggal_text = (
+                            str(tanggal)
+                            .strip()
+                        )
+
+                        # Coba ambil angka tanggal
+                        match_date = re.search(
+                            r"\b([1-9]|[12]\d|3[01])\b",
+                            tanggal_text
+                        )
+
+                        if match_date:
+
+                            tanggal = int(
+                                match_date.group(1)
+                            )
+
+                        else:
+
+                            continue
 
             else:
 
@@ -1902,28 +1867,31 @@ def extract_participant_target(sheets):
             ]
 
             # -------------------------------------------------
-            # SKIP JIKA KEDUANYA KOSONG
+            # SKIP BARIS KOSONG
             # -------------------------------------------------
 
             if (
-                pd.isna(target)
+                (
+                    pd.isna(target)
+                    or
+                    str(target).strip() == ""
+                )
                 and
-                pd.isna(actual)
+                (
+                    pd.isna(actual)
+                    or
+                    str(actual).strip() == ""
+                )
             ):
 
                 continue
 
             # =================================================
-            # KONVERSI ANGKA
+            # KONVERSI
             # =================================================
 
-            target = clean_number(
-                target
-            )
-
-            actual = clean_number(
-                actual
-            )
+            target = clean_number(target)
+            actual = clean_number(actual)
 
             # =================================================
             # SIMPAN
@@ -1951,14 +1919,12 @@ def extract_participant_target(sheets):
 
             })
 
-    # =========================================================
+    # =====================================================
     # DATAFRAME
-    # =========================================================
+    # =====================================================
 
     participant_df = pd.DataFrame(
-
         results,
-
         columns=[
             "Program",
             "Tahun",
@@ -1967,20 +1933,18 @@ def extract_participant_target(sheets):
             "Target",
             "Actual"
         ]
-
     )
 
-    # =========================================================
+    # =====================================================
     # JIKA KOSONG
-    # =========================================================
+    # =====================================================
 
     if participant_df.empty:
-
         return participant_df
 
-    # =========================================================
+    # =====================================================
     # NUMERIC
-    # =========================================================
+    # =====================================================
 
     participant_df["Tahun"] = pd.to_numeric(
         participant_df["Tahun"],
@@ -2007,9 +1971,9 @@ def extract_participant_target(sheets):
         errors="coerce"
     ).fillna(0)
 
-    # =========================================================
+    # =====================================================
     # FILTER DATA VALID
-    # =========================================================
+    # =====================================================
 
     participant_df = participant_df[
         participant_df["Tahun"].notna()
@@ -2019,9 +1983,9 @@ def extract_participant_target(sheets):
         participant_df["Bulan"].notna()
     ]
 
-    # =========================================================
+    # =====================================================
     # SORT
-    # =========================================================
+    # =====================================================
 
     participant_df = participant_df.sort_values(
         [
@@ -2033,103 +1997,6 @@ def extract_participant_target(sheets):
     ).reset_index(
         drop=True
     )
-
-    return participant_df
-
-    # =====================================================
-    # DATAFRAME
-    # =====================================================
-
-    participant_df = pd.DataFrame(
-
-        results,
-
-        columns=[
-            "Program",
-            "Tahun",
-            "Bulan",
-            "Tanggal",
-            "Target",
-            "Actual"
-        ]
-
-    )
-
-
-    # =====================================================
-    # JIKA KOSONG
-    # =====================================================
-
-    if participant_df.empty:
-
-        return participant_df
-
-
-    # =====================================================
-    # KONVERSI NUMERIK
-    # =====================================================
-
-    participant_df["Tahun"] = pd.to_numeric(
-        participant_df["Tahun"],
-        errors="coerce"
-    )
-
-
-    participant_df["Bulan"] = pd.to_numeric(
-        participant_df["Bulan"],
-        errors="coerce"
-    )
-
-
-    participant_df["Tanggal"] = pd.to_numeric(
-        participant_df["Tanggal"],
-        errors="coerce"
-    )
-
-
-    participant_df["Target"] = pd.to_numeric(
-        participant_df["Target"],
-        errors="coerce"
-    ).fillna(0)
-
-
-    participant_df["Actual"] = pd.to_numeric(
-        participant_df["Actual"],
-        errors="coerce"
-    ).fillna(0)
-
-
-    # =====================================================
-    # HANYA DATA TAHUN/BULAN VALID
-    # =====================================================
-
-    participant_df = participant_df[
-        participant_df["Tahun"].notna()
-    ]
-
-
-    participant_df = participant_df[
-        participant_df["Bulan"].notna()
-    ]
-
-
-    # =====================================================
-    # SORT
-    # =====================================================
-
-    participant_df = participant_df.sort_values(
-
-        [
-            "Program",
-            "Tahun",
-            "Bulan",
-            "Tanggal"
-        ]
-
-    ).reset_index(
-        drop=True
-    )
-
 
     return participant_df
 
@@ -2142,14 +2009,10 @@ def create_financial_chart(df):
 
     fig = go.Figure()
 
-
     if df.empty:
-
         return fig
 
-
     chart_df = df.copy()
-
 
     # =====================================================
     # NUMERIC
@@ -2160,12 +2023,10 @@ def create_financial_chart(df):
         errors="coerce"
     ).fillna(0)
 
-
     chart_df["Actual"] = pd.to_numeric(
         chart_df["Actual"],
         errors="coerce"
     ).fillna(0)
-
 
     # =====================================================
     # TARGET
@@ -2185,7 +2046,6 @@ def create_financial_chart(df):
 
     )
 
-
     # =====================================================
     # ACTUAL
     # =====================================================
@@ -2204,7 +2064,6 @@ def create_financial_chart(df):
 
     )
 
-
     # =====================================================
     # MAX VALUE
     # =====================================================
@@ -2217,20 +2076,14 @@ def create_financial_chart(df):
 
     )
 
-
     if max_value <= 0:
-
         max_value = 1
-
 
     # =====================================================
     # TICK
     # =====================================================
 
-    tick_step = (
-        max_value / 5
-    )
-
+    tick_step = max_value / 5
 
     tickvals = [
 
@@ -2239,7 +2092,6 @@ def create_financial_chart(df):
         for i in range(6)
 
     ]
-
 
     # =====================================================
     # FORMAT AXIS
@@ -2262,7 +2114,6 @@ def create_financial_chart(df):
 
             return f"Rp{teks} M"
 
-
         elif value >= 1_000_000:
 
             angka = (
@@ -2274,7 +2125,6 @@ def create_financial_chart(df):
             return (
                 f"Rp{angka:.0f} Jt"
             )
-
 
         elif value >= 1_000:
 
@@ -2288,14 +2138,12 @@ def create_financial_chart(df):
                 f"Rp{angka:.0f} Rb"
             )
 
-
         else:
 
             return (
                 f"Rp{value:,.0f}"
                 .replace(",", ".")
             )
-
 
     ticktext = [
 
@@ -2304,7 +2152,6 @@ def create_financial_chart(df):
         for value in tickvals
 
     ]
-
 
     # =====================================================
     # LAYOUT
@@ -2333,7 +2180,6 @@ def create_financial_chart(df):
 
     )
 
-
     fig.update_yaxes(
 
         tickmode="array",
@@ -2348,7 +2194,6 @@ def create_financial_chart(df):
 
     )
 
-
     return fig
 
 
@@ -2360,54 +2205,34 @@ def create_participant_chart(df):
 
     fig = go.Figure()
 
-
     if df.empty:
-
         return fig
 
-
     chart_df = df.copy()
-
 
     # =====================================================
     # NUMERIC
     # =====================================================
 
     chart_df["Target"] = pd.to_numeric(
-
         chart_df["Target"],
-
         errors="coerce"
-
     ).fillna(0)
-
 
     chart_df["Actual"] = pd.to_numeric(
-
         chart_df["Actual"],
-
         errors="coerce"
-
     ).fillna(0)
 
-
     chart_df["Bulan"] = pd.to_numeric(
-
         chart_df["Bulan"],
-
         errors="coerce"
-
     )
-
 
     chart_df["Tanggal"] = pd.to_numeric(
-
         chart_df["Tanggal"],
-
         errors="coerce"
-
     )
-
 
     # =====================================================
     # NAMA BULAN
@@ -2430,7 +2255,6 @@ def create_participant_chart(df):
 
     }
 
-
     # =====================================================
     # SORT
     # =====================================================
@@ -2446,32 +2270,24 @@ def create_participant_chart(df):
 
     )
 
-
     # =====================================================
     # AMBIL DATA TERAKHIR
     # DALAM SETIAP BULAN
     # =====================================================
 
     chart_df = (
-
         chart_df
-
         .groupby(
-
             [
                 "Program",
                 "Tahun",
                 "Bulan"
             ],
-
             as_index=False
-
         )
-
-        .last()
-
+        .tail(1)
+        .reset_index(drop=True)
     )
-
 
     # =====================================================
     # SORT FINAL
@@ -2487,42 +2303,27 @@ def create_participant_chart(df):
 
     )
 
-
     # =====================================================
     # BUAT CHART PER PROGRAM
     # =====================================================
 
-    for program in (
-
-        chart_df[
-            "Program"
-        ].unique()
-
-    ):
+    for program in chart_df["Program"].unique():
 
         program_df = chart_df[
-
-            chart_df["Program"]
-            == program
-
+            chart_df["Program"] == program
         ].copy()
-
 
         x_values = [
 
             month_names.get(
-
                 int(month),
-
                 str(month)
-
             )
 
             for month
             in program_df["Bulan"]
 
         ]
-
 
         # =================================================
         # TARGET
@@ -2552,7 +2353,6 @@ def create_participant_chart(df):
 
         )
 
-
         # =================================================
         # ACTUAL
         # =================================================
@@ -2581,7 +2381,6 @@ def create_participant_chart(df):
 
         )
 
-
     # =====================================================
     # LAYOUT
     # =====================================================
@@ -2609,10 +2408,8 @@ def create_participant_chart(df):
 
     )
 
-
     fig.update_yaxes(
         rangemode="tozero"
     )
-
 
     return fig
