@@ -1566,47 +1566,30 @@ def extract_financial_performance(sheets):
 # PARTICIPANT TARGET & ACTUAL
 # =========================================================
 
+# =========================================================
+# PARTICIPANT TARGET & ACTUAL
+# =========================================================
+
 def extract_participant_target(sheets):
     """
-    Mengambil Participant Target dan Actual
-    dari DATA KEDUA.
+    Mengambil Participant Target dan Participant Actual
+    HANYA dari sheet SIAP dan INSPIRASI.
 
-    Sheet yang diproses:
-    - SIAP
-    - INSPIRASI
+    Tidak mengambil data Financial Performance.
 
-    Struktur:
-    A = Tahun
-    B = Bulan
-    C = Tanggal
-    D = Finance Performance
-    E = Finance
-    F = Participant Target
-    G = Participant Actual
-
-    Header berada pada Excel row ke-4.
-    Data dimulai dari Excel row ke-5.
+    Header dicari berdasarkan nama kolom:
+    - Participant Target
+    - Participant Actual
     """
 
     results = []
-
-
-    # =====================================================
-    # PROGRAM YANG DIPROSES
-    # =====================================================
 
     target_programs = [
         "SIAP",
         "INSPIRASI"
     ]
 
-
-    # =====================================================
-    # MAPPING BULAN
-    # =====================================================
-
     month_map = {
-
         "januari": 1,
         "februari": 2,
         "maret": 3,
@@ -1619,18 +1602,16 @@ def extract_participant_target(sheets):
         "oktober": 10,
         "november": 11,
         "desember": 12
-
     }
 
-
     # =====================================================
-    # LOOP SEMUA SHEET
+    # LOOP SHEET
     # =====================================================
 
     for sheet_name, raw_df in sheets.items():
 
         # -------------------------------------------------
-        # Bersihkan nama sheet
+        # IDENTIFIKASI PROGRAM
         # -------------------------------------------------
 
         sheet_clean = re.sub(
@@ -1639,205 +1620,289 @@ def extract_participant_target(sheets):
             str(sheet_name)
         ).strip().upper()
 
-
-        # -------------------------------------------------
-        # Cari program
-        # -------------------------------------------------
-
         program = None
-
 
         for target_program in target_programs:
 
-            if target_program in sheet_clean:
+            if sheet_clean == target_program:
 
                 program = target_program
-
                 break
 
-
-        # -------------------------------------------------
-        # Bukan SIAP / INSPIRASI
-        # -------------------------------------------------
-
+        # Jika nama sheet mengandung SIAP / INSPIRASI
         if program is None:
 
+            for target_program in target_programs:
+
+                if target_program in sheet_clean:
+
+                    program = target_program
+                    break
+
+        if program is None:
             continue
 
-
-        # -------------------------------------------------
-        # Copy data
-        # -------------------------------------------------
+        # =================================================
+        # COPY DATA
+        # =================================================
 
         df = raw_df.copy()
 
+        if df.empty:
+            continue
 
-        # -------------------------------------------------
-        # Minimal 7 kolom A:G
-        # -------------------------------------------------
+        # =================================================
+        # CARI HEADER PARTICIPANT
+        # =================================================
 
-        if df.shape[1] < 7:
+        header_row = None
+
+        target_col_index = None
+        actual_col_index = None
+
+        for i in range(len(df)):
+
+            row_values = (
+                df.iloc[i]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .tolist()
+            )
+
+            for j, value in enumerate(row_values):
+
+                # -----------------------------------------
+                # TARGET
+                # -----------------------------------------
+
+                if (
+                    "participant target" in value
+                    or
+                    value == "target participant"
+                ):
+
+                    target_col_index = j
+                    header_row = i
+
+                # -----------------------------------------
+                # ACTUAL
+                # -----------------------------------------
+
+                if (
+                    "participant actual" in value
+                    or
+                    value == "actual participant"
+                ):
+
+                    actual_col_index = j
+                    header_row = i
+
+            # Jika keduanya sudah ditemukan
+            if (
+                target_col_index is not None
+                and
+                actual_col_index is not None
+            ):
+
+                break
+
+        # =================================================
+        # JIKA HEADER TIDAK DITEMUKAN
+        # =================================================
+
+        if (
+            header_row is None
+            or
+            target_col_index is None
+            or
+            actual_col_index is None
+        ):
 
             continue
 
+        # =================================================
+        # CARI KOLOM TAHUN / BULAN / TANGGAL
+        # =================================================
 
-        # -------------------------------------------------
-        # Hanya A:G
-        # -------------------------------------------------
+        year_col_index = None
+        month_col_index = None
+        date_col_index = None
 
-        df = df.iloc[
-            :,
-            :7
-        ].copy()
+        header_values = (
+            df.iloc[header_row]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .tolist()
+        )
 
+        for j, value in enumerate(header_values):
+
+            if value in [
+                "tahun",
+                "year"
+            ]:
+
+                year_col_index = j
+
+            elif value in [
+                "bulan",
+                "month"
+            ]:
+
+                month_col_index = j
+
+            elif value in [
+                "tanggal",
+                "date",
+                "tgl"
+            ]:
+
+                date_col_index = j
 
         # =================================================
-        # DATA DIMULAI SETELAH HEADER BARIS 4
+        # DATA SETELAH HEADER
         # =================================================
 
         data = df.iloc[
-            4:
+            header_row + 1:
         ].copy()
-
 
         data.reset_index(
             drop=True,
             inplace=True
         )
 
-
         # =================================================
-        # VARIABLE BULAN / TAHUN
+        # CURRENT YEAR / MONTH
         # =================================================
 
         current_year = None
-
         current_month = None
 
-
         # =================================================
-        # LOOP BARIS
+        # LOOP DATA
         # =================================================
 
         for _, row in data.iterrows():
 
             # -------------------------------------------------
-            # TAHUN — KOLOM A
+            # TAHUN
             # -------------------------------------------------
 
-            year_value = row.iloc[0]
+            if year_col_index is not None:
 
+                year_value = row.iloc[
+                    year_col_index
+                ]
 
-            if (
-                pd.notna(year_value)
-                and
-                str(year_value).strip() != ""
-            ):
-
-                try:
-
-                    current_year = int(
-                        float(year_value)
-                    )
-
-                except:
-
-                    pass
-
-
-            # -------------------------------------------------
-            # BULAN — KOLOM B
-            # -------------------------------------------------
-
-            month_value = row.iloc[1]
-
-
-            if (
-                pd.notna(month_value)
-                and
-                str(month_value).strip() != ""
-            ):
-
-                month_text = (
-                    str(month_value)
-                    .strip()
-                    .lower()
-                )
-
-
-                if month_text in month_map:
-
-                    current_month = (
-                        month_map[
-                            month_text
-                        ]
-                    )
-
-                else:
+                if (
+                    pd.notna(year_value)
+                    and
+                    str(year_value).strip() != ""
+                ):
 
                     try:
 
-                        current_month = int(
-                            float(month_value)
+                        current_year = int(
+                            float(year_value)
                         )
 
                     except:
 
                         pass
 
-
             # -------------------------------------------------
-            # TANGGAL — KOLOM C
-            # -------------------------------------------------
-
-            tanggal = row.iloc[2]
-
-
-            if (
-                pd.isna(tanggal)
-                or
-                str(tanggal).strip() == ""
-            ):
-
-                continue
-
-
-            try:
-
-                tanggal = int(
-                    float(tanggal)
-                )
-
-            except:
-
-                continue
-
-
-            # -------------------------------------------------
-            # TARGET — KOLOM F
+            # BULAN
             # -------------------------------------------------
 
-            target = row.iloc[5]
+            if month_col_index is not None:
 
+                month_value = row.iloc[
+                    month_col_index
+                ]
+
+                if (
+                    pd.notna(month_value)
+                    and
+                    str(month_value).strip() != ""
+                ):
+
+                    month_text = (
+                        str(month_value)
+                        .strip()
+                        .lower()
+                    )
+
+                    if month_text in month_map:
+
+                        current_month = (
+                            month_map[
+                                month_text
+                            ]
+                        )
+
+                    else:
+
+                        try:
+
+                            current_month = int(
+                                float(month_value)
+                            )
+
+                        except:
+
+                            pass
 
             # -------------------------------------------------
-            # ACTUAL — KOLOM G
+            # TANGGAL
             # -------------------------------------------------
 
-            actual = row.iloc[6]
+            if date_col_index is not None:
+
+                tanggal = row.iloc[
+                    date_col_index
+                ]
+
+                if (
+                    pd.isna(tanggal)
+                    or
+                    str(tanggal).strip() == ""
+                ):
+
+                    continue
+
+                try:
+
+                    tanggal = int(
+                        float(tanggal)
+                    )
+
+                except:
+
+                    continue
+
+            else:
+
+                tanggal = None
+
+            # =================================================
+            # AMBIL PARTICIPANT
+            # =================================================
+
+            target = row.iloc[
+                target_col_index
+            ]
+
+            actual = row.iloc[
+                actual_col_index
+            ]
 
             # -------------------------------------------------
-            # CEK NILAI YANG TERBACA
-            # -------------------------------------------------
-            
-            print(
-                "PROGRAM:", program,
-                "| TANGGAL:", tanggal,
-                "| TARGET:", repr(target),
-                "| ACTUAL:", repr(actual)
-            )
-            # -------------------------------------------------
-            # Jika dua-duanya kosong
+            # SKIP JIKA KEDUANYA KOSONG
             # -------------------------------------------------
 
             if (
@@ -1848,24 +1913,21 @@ def extract_participant_target(sheets):
 
                 continue
 
+            # =================================================
+            # KONVERSI ANGKA
+            # =================================================
 
-            # -------------------------------------------------
-            # Konversi target
-            # -------------------------------------------------
-            
-            target = clean_number(target)
-            
-            
-            # -------------------------------------------------
-            # Konversi actual
-            # -------------------------------------------------
-            
-            actual = clean_number(actual)
+            target = clean_number(
+                target
+            )
 
+            actual = clean_number(
+                actual
+            )
 
-            # -------------------------------------------------
-            # Simpan
-            # -------------------------------------------------
+            # =================================================
+            # SIMPAN
+            # =================================================
 
             results.append({
 
@@ -1889,6 +1951,90 @@ def extract_participant_target(sheets):
 
             })
 
+    # =========================================================
+    # DATAFRAME
+    # =========================================================
+
+    participant_df = pd.DataFrame(
+
+        results,
+
+        columns=[
+            "Program",
+            "Tahun",
+            "Bulan",
+            "Tanggal",
+            "Target",
+            "Actual"
+        ]
+
+    )
+
+    # =========================================================
+    # JIKA KOSONG
+    # =========================================================
+
+    if participant_df.empty:
+
+        return participant_df
+
+    # =========================================================
+    # NUMERIC
+    # =========================================================
+
+    participant_df["Tahun"] = pd.to_numeric(
+        participant_df["Tahun"],
+        errors="coerce"
+    )
+
+    participant_df["Bulan"] = pd.to_numeric(
+        participant_df["Bulan"],
+        errors="coerce"
+    )
+
+    participant_df["Tanggal"] = pd.to_numeric(
+        participant_df["Tanggal"],
+        errors="coerce"
+    )
+
+    participant_df["Target"] = pd.to_numeric(
+        participant_df["Target"],
+        errors="coerce"
+    ).fillna(0)
+
+    participant_df["Actual"] = pd.to_numeric(
+        participant_df["Actual"],
+        errors="coerce"
+    ).fillna(0)
+
+    # =========================================================
+    # FILTER DATA VALID
+    # =========================================================
+
+    participant_df = participant_df[
+        participant_df["Tahun"].notna()
+    ]
+
+    participant_df = participant_df[
+        participant_df["Bulan"].notna()
+    ]
+
+    # =========================================================
+    # SORT
+    # =========================================================
+
+    participant_df = participant_df.sort_values(
+        [
+            "Program",
+            "Tahun",
+            "Bulan",
+            "Tanggal"
+        ]
+    ).reset_index(
+        drop=True
+    )
+
+    return participant_df
 
     # =====================================================
     # DATAFRAME
