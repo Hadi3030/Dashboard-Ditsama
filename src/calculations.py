@@ -566,79 +566,6 @@ def create_financial_chart(df):
         errors="coerce"
     ).fillna(0)
 
-    chart_df["Saldo Terakhir"] = pd.to_numeric(
-        chart_df["Saldo Terakhir"],
-        errors="coerce"
-    ).fillna(0)
-
-    # =====================================================
-    # TARGET
-    # =====================================================
-
-    fig.add_trace(
-        go.Bar(
-            x=chart_df["Program"],
-            y=chart_df["Target"],
-            name="Target"
-        )
-    )
-
-    # =====================================================
-    # ACTUAL
-    # =====================================================
-
-    fig.add_trace(
-        go.Bar(
-            x=chart_df["Program"],
-            y=chart_df["Actual"],
-            name="Actual"
-        )
-    )
-
-    # =====================================================
-    # LAYOUT
-    # =====================================================
-
-    fig.update_layout(
-        barmode="group",
-        height=350,
-        margin=dict(
-            l=20,
-            r=20,
-            t=20,
-            b=80
-        ),
-        xaxis_title="Program",
-        yaxis_title="Nilai",
-        legend_title="Financial Performance"
-    )
-
-    return fig
-
-# =========================================================
-# CREATE FINANCIAL CHART
-# =========================================================
-
-def create_financial_chart(df):
-
-    fig = go.Figure()
-
-    if df.empty:
-        return fig
-
-    chart_df = df.copy()
-
-    # Pastikan angka numerik
-    chart_df["Target"] = pd.to_numeric(
-        chart_df["Target"],
-        errors="coerce"
-    ).fillna(0)
-
-    chart_df["Actual"] = pd.to_numeric(
-        chart_df["Actual"],
-        errors="coerce"
-    ).fillna(0)
-
     # =====================================================
     # TARGET
     # =====================================================
@@ -734,5 +661,245 @@ def create_financial_chart(df):
     exponentformat="none",
     showexponent="none"
     )
+
+    return fig
+
+# =========================================================
+# CREATE FINANCIAL CHART
+# =========================================================
+
+def create_financial_chart(df):
+
+    fig = go.Figure()
+
+
+    # =====================================================
+    # JIKA DATA KOSONG
+    # =====================================================
+
+    if df.empty:
+
+        return fig
+
+
+    # =====================================================
+    # COPY DATA
+    # =====================================================
+
+    chart_df = df.copy()
+
+
+    # =====================================================
+    # PASTIKAN TARGET NUMERIK
+    # =====================================================
+
+    chart_df["Target"] = pd.to_numeric(
+        chart_df["Target"],
+        errors="coerce"
+    ).fillna(0)
+
+
+    # =====================================================
+    # PASTIKAN ACTUAL NUMERIK
+    # =====================================================
+
+    chart_df["Actual"] = pd.to_numeric(
+        chart_df["Actual"],
+        errors="coerce"
+    ).fillna(0)
+
+
+    # =====================================================
+    # TARGET
+    # =====================================================
+
+    fig.add_trace(
+
+        go.Bar(
+
+            x=chart_df["Program"],
+
+            y=chart_df["Target"],
+
+            name="Target"
+
+        )
+
+    )
+
+
+    # =====================================================
+    # ACTUAL
+    # =====================================================
+
+    fig.add_trace(
+
+        go.Bar(
+
+            x=chart_df["Program"],
+
+            y=chart_df["Actual"],
+
+            name="Actual"
+
+        )
+
+    )
+
+
+    # =====================================================
+    # CARI NILAI MAKSIMUM
+    # =====================================================
+
+    max_value = max(
+
+        chart_df["Target"].max(),
+
+        chart_df["Actual"].max()
+
+    )
+
+
+    # -----------------------------------------------------
+    # Jika nilai maksimum 0
+    # -----------------------------------------------------
+
+    if max_value <= 0:
+
+        max_value = 1
+
+
+    # =====================================================
+    # INTERVAL SUMBU Y
+    # =====================================================
+
+    tick_step = max_value / 5
+
+
+    tickvals = [
+
+        tick_step * i
+
+        for i in range(6)
+
+    ]
+
+
+    # =====================================================
+    # FORMAT SUMBU Y
+    # =====================================================
+
+    def format_axis(value):
+
+        if value >= 1_000_000_000:
+
+            angka = (
+                value /
+                1_000_000_000
+            )
+
+            teks = (
+                f"{angka:.1f}"
+                .replace(".", ",")
+            )
+
+            return f"Rp{teks} M"
+
+
+        elif value >= 1_000_000:
+
+            angka = (
+                value /
+                1_000_000
+            )
+
+            teks = (
+                f"{angka:.0f}"
+            )
+
+            return f"Rp{teks} Jt"
+
+
+        elif value >= 1_000:
+
+            angka = (
+                value /
+                1_000
+            )
+
+            teks = (
+                f"{angka:.0f}"
+            )
+
+            return f"Rp{teks} Rb"
+
+
+        else:
+
+            return (
+                f"Rp{value:,.0f}"
+                .replace(",", ".")
+            )
+
+
+    # =====================================================
+    # LABEL SUMBU Y
+    # =====================================================
+
+    ticktext = [
+
+        format_axis(value)
+
+        for value in tickvals
+
+    ]
+
+
+    # =====================================================
+    # LAYOUT
+    # =====================================================
+
+    fig.update_layout(
+
+        barmode="group",
+
+        height=350,
+
+        margin=dict(
+
+            l=20,
+            r=20,
+            t=20,
+            b=80
+
+        ),
+
+        xaxis_title="Program",
+
+        yaxis_title="Nilai",
+
+        legend_title="Financial Performance"
+
+    )
+
+
+    # =====================================================
+    # FORMAT SUMBU Y
+    # =====================================================
+
+    fig.update_yaxes(
+
+        tickmode="array",
+
+        tickvals=tickvals,
+
+        ticktext=ticktext,
+
+        exponentformat="none",
+
+        showexponent="none"
+
+    )
+
 
     return fig
