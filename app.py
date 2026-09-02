@@ -14,7 +14,6 @@ from config.data_sources import EXCEL_URLS
 # =========================================================
 # PAGE CONFIGURATION
 # =========================================================
-# Pengaturan dasar halaman dashboard.
 
 st.set_page_config(
     page_title="Dashboard Program Ditsama 2026",
@@ -26,8 +25,6 @@ st.set_page_config(
 # =========================================================
 # LOAD CSS
 # =========================================================
-# Mengambil file CSS dari:
-# assets/style.css
 
 try:
 
@@ -68,7 +65,6 @@ st.write(
 # =========================================================
 # LOAD DATA
 # =========================================================
-# Mengambil data dari Excel.
 
 try:
 
@@ -99,93 +95,6 @@ except Exception as e:
 
 
 # =========================================================
-# PREPARE DATE DATA
-# =========================================================
-# Bagian ini mengubah kolom:
-#
-# "Tanggal Pengajuan"
-#
-# menjadi datetime.
-#
-# Kita buat khusus untuk nama bulan Bahasa Indonesia.
-#
-# Contoh:
-#
-# 19 Juli
-# 5 Agustus
-# 10 September 2026
-#
-# semuanya akan dapat dibaca oleh Pandas.
-
-
-if (
-    not financial_df.empty
-    and "Tanggal Pengajuan" in financial_df.columns
-):
-
-    # -----------------------------------------------------
-    # MAPPING BULAN INDONESIA KE INGGRIS
-    # -----------------------------------------------------
-
-    bulan_id_to_en = {
-
-        "Januari": "January",
-        "Februari": "February",
-        "Maret": "March",
-        "April": "April",
-        "Mei": "May",
-        "Juni": "June",
-        "Juli": "July",
-        "Agustus": "August",
-        "September": "September",
-        "Oktober": "October",
-        "November": "November",
-        "Desember": "December"
-
-    }
-
-
-    # -----------------------------------------------------
-    # BERSIHKAN DATA TANGGAL
-    # -----------------------------------------------------
-
-    financial_df["Tanggal Pengajuan"] = (
-        financial_df["Tanggal Pengajuan"]
-        .astype(str)
-        .str.strip()
-    )
-
-
-    # -----------------------------------------------------
-    # UBAH NAMA BULAN INDONESIA
-    # MENJADI BAHASA INGGRIS
-    # -----------------------------------------------------
-
-    for bulan_id, bulan_en in bulan_id_to_en.items():
-
-        financial_df["Tanggal Pengajuan"] = (
-            financial_df["Tanggal Pengajuan"]
-            .str.replace(
-                bulan_id,
-                bulan_en,
-                case=False,
-                regex=False
-            )
-        )
-
-
-    # -----------------------------------------------------
-    # KONVERSI MENJADI DATETIME
-    # -----------------------------------------------------
-
-    financial_df["Tanggal Pengajuan"] = pd.to_datetime(
-        financial_df["Tanggal Pengajuan"],
-        errors="coerce",
-        dayfirst=True
-    )
-
-
-# =========================================================
 # SIDEBAR / CONTROL
 # =========================================================
 
@@ -195,7 +104,6 @@ st.sidebar.title("CONTROL")
 # =========================================================
 # 1. PROGRAM FILTER
 # =========================================================
-# Mengambil semua nama program dari data.
 
 if (
     not financial_df.empty
@@ -219,20 +127,6 @@ else:
 # =========================================================
 # PROGRAM CHECKBOX DROPDOWN
 # =========================================================
-# Program disimpan di dalam expander.
-#
-# Ketika tertutup:
-#
-# ☑ Pilih Program
-#
-# Ketika diklik:
-#
-# Semua Program
-# ☑ OSN
-# ☑ OPSI
-# ☑ Riset
-# dst.
-
 
 with st.sidebar.expander(
     "☑  Pilih Program",
@@ -251,7 +145,7 @@ with st.sidebar.expander(
 
 
     # -----------------------------------------------------
-    # LIST PROGRAM TERPILIH
+    # PROGRAM YANG DIPILIH
     # -----------------------------------------------------
 
     program_filter = []
@@ -286,7 +180,6 @@ bidang_filter = st.sidebar.selectbox(
 # =========================================================
 # 3. TAHUN FILTER
 # =========================================================
-# Mengambil tahun dari kolom "Tahun".
 
 if (
     not financial_df.empty
@@ -322,11 +215,26 @@ tahun_filter = st.sidebar.selectbox(
 # =========================================================
 # 4. BULAN FILTER
 # =========================================================
-# Bulan diambil dari:
 #
-# "Tanggal Pengajuan"
+# PENTING:
 #
-# Jadi tidak perlu ada kolom "Bulan" di Excel.
+# Kita TIDAK menggunakan "Tanggal Pengajuan".
+#
+# Kolom "Bulan" sudah dibuat oleh:
+#
+# extract_program_info()
+#
+# dari nama sheet Excel.
+#
+# Contoh:
+#
+# DITSAMA.PM-3-6-2026-SIAP
+#
+# menghasilkan:
+#
+# Bulan = 6
+#
+# =========================================================
 
 
 bulan_mapping = {
@@ -377,7 +285,6 @@ if st.sidebar.button(
 # =========================================================
 # FILTER DATA
 # =========================================================
-# Mulai dari seluruh data.
 
 filtered_df = financial_df.copy()
 
@@ -398,21 +305,12 @@ if program_filter:
 
 else:
 
-    # Jika tidak ada program yang dipilih,
-    # dataframe menjadi kosong.
-
     filtered_df = filtered_df.iloc[0:0]
 
 
 # =========================================================
 # FILTER 2 — BIDANG
 # =========================================================
-# Saat ini belum diterapkan karena data Bidang
-# belum tersedia sebagai filter.
-#
-# Nanti bisa dikembangkan jika kolom Bidang
-# sudah tersedia.
-
 
 if bidang_filter != "Semua Bidang":
 
@@ -440,19 +338,29 @@ if tahun_filter != "Semua Tahun":
 # =========================================================
 # FILTER 4 — BULAN
 # =========================================================
-# Filter bulan berdasarkan:
 #
-# filtered_df["Tanggal Pengajuan"].dt.month
+# INI BAGIAN YANG DIPERBAIKI.
+#
+# Sebelumnya:
+#
+# Tanggal Pengajuan -> .dt.month
+#
+# Sekarang:
+#
+# Kolom Bulan -> langsung dibandingkan
+# dengan nomor bulan.
 #
 # Contoh:
 #
-# Juli -> 7
-# Agustus -> 8
-
+# Juli = 7
+#
+# filtered_df["Bulan"] == 7
+#
+# =========================================================
 
 if (
     bulan_filter != "Semua Bulan"
-    and "Tanggal Pengajuan" in filtered_df.columns
+    and "Bulan" in filtered_df.columns
 ):
 
     bulan_number = bulan_mapping[
@@ -461,9 +369,10 @@ if (
 
 
     filtered_df = filtered_df[
-        filtered_df[
-            "Tanggal Pengajuan"
-        ].dt.month == bulan_number
+        pd.to_numeric(
+            filtered_df["Bulan"],
+            errors="coerce"
+        ) == bulan_number
     ]
 
 
@@ -490,9 +399,13 @@ if not filtered_df.empty:
     # -----------------------------------------------------
 
     total_pengajuan = (
-        filtered_df[
-            "Total Pengajuan"
-        ]
+        pd.to_numeric(
+            filtered_df[
+                "Total Pengajuan"
+            ],
+            errors="coerce"
+        )
+        .fillna(0)
         .sum()
     )
 
@@ -502,9 +415,13 @@ if not filtered_df.empty:
     # -----------------------------------------------------
 
     total_saldo = (
-        filtered_df[
-            "Saldo Terakhir"
-        ]
+        pd.to_numeric(
+            filtered_df[
+                "Saldo Terakhir"
+            ],
+            errors="coerce"
+        )
+        .fillna(0)
         .sum()
     )
 
@@ -512,9 +429,7 @@ if not filtered_df.empty:
 else:
 
     total_program = 0
-
     total_pengajuan = 0
-
     total_saldo = 0
 
 
@@ -525,9 +440,9 @@ else:
 col1, col2, col3, col4 = st.columns(4)
 
 
-# ---------------------------------------------------------
+# =========================================================
 # KPI 1
-# ---------------------------------------------------------
+# =========================================================
 
 with col1:
 
@@ -537,9 +452,9 @@ with col1:
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # KPI 2
-# ---------------------------------------------------------
+# =========================================================
 
 with col2:
 
@@ -549,9 +464,9 @@ with col2:
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # KPI 3
-# ---------------------------------------------------------
+# =========================================================
 
 with col3:
 
@@ -561,9 +476,9 @@ with col3:
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # KPI 4
-# ---------------------------------------------------------
+# =========================================================
 
 with col4:
 
@@ -597,15 +512,7 @@ with col_left:
 
     if not filtered_df.empty:
 
-        # -------------------------------------------------
-        # PENTING:
-        #
-        # Grafik HARUS menggunakan filtered_df,
-        # bukan financial_df.
-        #
-        # Dengan demikian ketika Program / Tahun /
-        # Bulan berubah, grafik ikut berubah.
-        # -------------------------------------------------
+        # Grafik menggunakan DATA YANG SUDAH DIFILTER.
 
         financial_chart = (
             create_financial_chart(
