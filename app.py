@@ -235,10 +235,46 @@ bulan_mapping = {
 
 }
 
-
 bulan_list = list(
     bulan_mapping.keys()
 )
+
+
+# =========================================================
+# INISIALISASI STATE BULAN
+# =========================================================
+
+# Pada saat dashboard pertama kali dibuka,
+# semua bulan dianggap terpilih.
+
+if "bulan_initialized" not in st.session_state:
+
+    st.session_state["bulan_initialized"] = True
+
+    st.session_state["semua_bulan"] = True
+
+    for bulan in bulan_list:
+
+        st.session_state[
+            f"bulan_{bulan}"
+        ] = True
+
+
+# =========================================================
+# FUNGSI KETIKA "SEMUA BULAN" DIUBAH
+# =========================================================
+
+def update_semua_bulan():
+
+    nilai_semua = st.session_state[
+        "semua_bulan"
+    ]
+
+    for bulan in bulan_list:
+
+        st.session_state[
+            f"bulan_{bulan}"
+        ] = nilai_semua
 
 
 # =========================================================
@@ -251,38 +287,100 @@ with st.sidebar.expander(
 ):
 
     # -----------------------------------------------------
-    # SEMUA BULAN
+    # CHECKBOX SEMUA BULAN
     # -----------------------------------------------------
 
-    semua_bulan = st.checkbox(
+    st.checkbox(
         "Semua Bulan",
-        value=True,
-        key="semua_bulan"
+        key="semua_bulan",
+        on_change=update_semua_bulan
     )
 
 
     # -----------------------------------------------------
-    # BULAN YANG DIPILIH
+    # CHECKBOX SETIAP BULAN
     # -----------------------------------------------------
-
-    bulan_filter = []
-
 
     for bulan in bulan_list:
 
-        selected = st.checkbox(
+        st.checkbox(
             bulan,
-            value=semua_bulan,
             key=f"bulan_{bulan}"
         )
 
-        if selected:
 
-            bulan_filter.append(
-                bulan
-            )
+# =========================================================
+# AMBIL BULAN YANG DIPILIH
+# =========================================================
+
+bulan_filter = [
+
+    bulan
+
+    for bulan in bulan_list
+
+    if st.session_state.get(
+        f"bulan_{bulan}",
+        False
+    )
+
+]
 
 
+# =========================================================
+# CEK APAKAH SEMUA BULAN TERPILIH
+# =========================================================
+
+semua_bulan_terpilih = (
+    len(bulan_filter) == len(bulan_list)
+)
+
+
+# =========================================================
+# FILTER DATA BERDASARKAN BULAN
+# =========================================================
+
+# Jika semua bulan dipilih,
+# jangan melakukan filter bulan.
+
+if (
+    not semua_bulan_terpilih
+    and len(bulan_filter) > 0
+    and "Bulan" in filtered_df.columns
+):
+
+    # Ubah nama bulan menjadi angka.
+
+    bulan_number = [
+
+        bulan_mapping[bulan]
+
+        for bulan in bulan_filter
+
+    ]
+
+
+    # Filter data berdasarkan bulan yang dipilih.
+
+    filtered_df = filtered_df[
+        pd.to_numeric(
+            filtered_df["Bulan"],
+            errors="coerce"
+        ).isin(
+            bulan_number
+        )
+    ]
+
+
+# Jika tidak ada bulan yang dipilih,
+# kosongkan data.
+
+elif (
+    len(bulan_filter) == 0
+    and "Bulan" in filtered_df.columns
+):
+
+    filtered_df = filtered_df.iloc[0:0]
 # =========================================================
 # 5. REFRESH DATA
 # =========================================================
