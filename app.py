@@ -120,14 +120,10 @@ else:
     program_list = []
 
 
-program_options = [
-    "Semua Program"
-] + program_list
-
-
-program_filter = st.sidebar.selectbox(
-    "Program",
-    program_options
+program_filter = st.sidebar.multiselect(
+    "Pilih Program",
+    program_list,
+    default=program_list
 )
 
 
