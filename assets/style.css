@@ -154,3 +154,35 @@ div[data-testid="stTable"]:hover {
         0 8px 18px rgba(23, 54, 93, 0.12),
         0 16px 35px rgba(23, 54, 93, 0.08) !important;
 }
+
+
+/* =========================================
+   FLOATING KPI CARD
+========================================= */
+
+div[data-testid="metric-container"] {
+    background: #FFFFFF !important;
+
+    border: 1px solid #E3EAF4 !important;
+    border-radius: 14px !important;
+
+    padding: 18px !important;
+
+    box-shadow:
+        0 4px 10px rgba(23, 54, 93, 0.08),
+        0 10px 25px rgba(23, 54, 93, 0.06) !important;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+
+/* KPI naik sedikit ketika disentuh */
+div[data-testid="metric-container"]:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 8px 18px rgba(23, 54, 93, 0.12),
+        0 16px 35px rgba(23, 54, 93, 0.08) !important;
+}
