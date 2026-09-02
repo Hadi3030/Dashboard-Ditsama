@@ -1852,27 +1852,15 @@ def extract_participant_target(sheets):
             # -------------------------------------------------
             # Konversi target
             # -------------------------------------------------
-
-            try:
-
-                target = float(target)
-
-            except:
-
-                target = 0
-
-
+            
+            target = clean_number(target)
+            
+            
             # -------------------------------------------------
             # Konversi actual
             # -------------------------------------------------
-
-            try:
-
-                actual = float(actual)
-
-            except:
-
-                actual = 0
+            
+            actual = clean_number(actual)
 
 
             # -------------------------------------------------
