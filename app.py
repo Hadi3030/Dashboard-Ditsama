@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import pandas as pd
 
@@ -1789,4 +1788,3 @@ st.markdown("---")
 st.caption(
     "Dashboard Program Ditsama 2026"
 )
-```
