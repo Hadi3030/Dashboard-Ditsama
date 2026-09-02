@@ -52,19 +52,13 @@ section[data-testid="stSidebar"] h3 {
    SIDEBAR SELECTBOX
 ========================================= */
 
-/*
-   Hanya mengatur kotak selectbox.
-   Tidak menggunakan selector "*"
-   agar dropdown Streamlit tidak terganggu.
-*/
-
 section[data-testid="stSidebar"] [data-baseweb="select"] {
     background-color: #FFFFFF !important;
     border-radius: 8px !important;
 }
 
 
-/* Tulisan yang sedang terpilih */
+/* Tulisan yang dipilih */
 
 section[data-testid="stSidebar"]
 [data-baseweb="select"]
@@ -77,34 +71,20 @@ section[data-testid="stSidebar"]
    DROPDOWN MENU
 ========================================= */
 
-/*
-   Dropdown Streamlit/BaseWeb kadang muncul
-   di luar struktur sidebar.
-   
-   z-index tinggi memastikan menu berada
-   di atas elemen dashboard lainnya.
-*/
-
 [data-baseweb="popover"] {
     z-index: 999999 !important;
 }
 
-
-/* Tulisan pilihan di dalam dropdown */
 
 [data-baseweb="menu"] {
     background-color: #FFFFFF !important;
 }
 
 
-/* Item dropdown */
-
 [data-baseweb="menu"] li {
     color: #17365D !important;
 }
 
-
-/* Item ketika mouse diarahkan */
 
 [data-baseweb="menu"] li:hover {
     background-color: #D9E2F3 !important;
@@ -115,26 +95,11 @@ section[data-testid="stSidebar"]
    SIDEBAR EXPANDER
 ========================================= */
 
-/*
-   Digunakan untuk:
-   ☑ Pilih Program
-*/
-
 section[data-testid="stSidebar"]
 [data-testid="stExpander"] {
     border: none !important;
 }
 
-
-/* Header expander */
-
-section[data-testid="stSidebar"]
-[data-testid="stExpander"] summary {
-    color: #FFFFFF !important;
-}
-
-
-/* Tulisan di dalam expander */
 
 section[data-testid="stSidebar"]
 [data-testid="stExpander"] p,
@@ -149,7 +114,9 @@ section[data-testid="stSidebar"]
 ========================================= */
 
 section[data-testid="stSidebar"] .stButton button {
+
     background-color: #FFFFFF !important;
+
     color: #17365D !important;
 
     border-radius: 8px !important;
@@ -160,21 +127,17 @@ section[data-testid="stSidebar"] .stButton button {
 }
 
 
-/* Hover button */
-
 section[data-testid="stSidebar"] .stButton button:hover {
+
     background-color: #D9E2F3 !important;
+
     color: #17365D !important;
 }
 
 
 /* =========================================
-   CHECKBOX PROGRAM
+   CHECKBOX
 ========================================= */
-
-/*
-   Checkbox tetap berada di sidebar biru.
-*/
 
 section[data-testid="stSidebar"]
 [data-testid="stCheckbox"] label {
@@ -187,6 +150,7 @@ section[data-testid="stSidebar"]
 ========================================= */
 
 div[data-testid="metric-container"] {
+
     background-color: #FFFFFF !important;
 
     border: 1px solid #E3EAF4 !important;
@@ -240,7 +204,7 @@ div[data-testid="metric-container"]:hover {
 
 
 /* =========================================
-   GRAPH / TABLE CONTAINER
+   GRAPH / TABLE
 ========================================= */
 
 div[data-testid="stPlotlyChart"],
@@ -269,7 +233,7 @@ div[data-testid="stTable"] {
 
 
 /* =========================================
-   GRAPH / TABLE HOVER
+   GRAPH HOVER
 ========================================= */
 
 div[data-testid="stPlotlyChart"]:hover,
