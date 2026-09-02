@@ -722,15 +722,41 @@ def create_financial_chart(df):
     chart_df = df.copy()
 
     # -----------------------------------------------------
-    # Buat label periode
+    # Pastikan kolom numeric
     # -----------------------------------------------------
 
-    chart_df["Periode"] = (
-        chart_df["Tanggal"].astype(int).astype(str)
-        + "-"
-        + chart_df["Bulan"].astype(int).astype(str)
-        + "-"
-        + chart_df["Tahun"].astype(int).astype(str)
+    for col in [
+        "Tanggal",
+        "Bulan",
+        "Tahun",
+        "Target",
+        "Actual"
+    ]:
+        chart_df[col] = pd.to_numeric(
+            chart_df[col],
+            errors="coerce"
+        ).fillna(0)
+
+    # -----------------------------------------------------
+    # Buat tanggal periode
+    # -----------------------------------------------------
+
+    chart_df["Tanggal Periode"] = pd.to_datetime(
+        dict(
+            year=chart_df["Tahun"].astype(int),
+            month=chart_df["Bulan"].astype(int),
+            day=chart_df["Tanggal"].astype(int)
+        ),
+        errors="coerce"
+    )
+
+    chart_df = chart_df.sort_values(
+        [
+            "Tahun",
+            "Bulan",
+            "Tanggal",
+            "Program"
+        ]
     )
 
     # -----------------------------------------------------
@@ -740,7 +766,7 @@ def create_financial_chart(df):
     plot_df = chart_df[
         [
             "Program",
-            "Periode",
+            "Tanggal Periode",
             "Target",
             "Actual"
         ]
@@ -749,7 +775,7 @@ def create_financial_chart(df):
     plot_df = plot_df.melt(
         id_vars=[
             "Program",
-            "Periode"
+            "Tanggal Periode"
         ],
         value_vars=[
             "Target",
@@ -760,27 +786,31 @@ def create_financial_chart(df):
     )
 
     # -----------------------------------------------------
-    # Chart
+    # LINE CHART
     # -----------------------------------------------------
 
-    fig = px.bar(
+    fig = px.line(
         plot_df,
-        x="Program",
+        x="Tanggal Periode",
         y="Nilai",
         color="Jenis",
-        barmode="group",
-        text_auto=".2s",
+        markers=True,
+        line_dash="Program",
         hover_data=[
-            "Periode"
+            "Program"
         ],
         title="Financial Target vs Actual"
     )
 
     fig.update_layout(
-        xaxis_title="Program",
+        xaxis_title="Periode",
         yaxis_title="Nilai",
         legend_title="",
         hovermode="x unified"
+    )
+
+    fig.update_xaxes(
+        tickformat="%d %b %Y"
     )
 
     return fig
@@ -798,11 +828,28 @@ def create_participant_chart(df):
     chart_df = df.copy()
 
     # -----------------------------------------------------
-    # Pastikan urut berdasarkan tanggal
+    # Pastikan kolom numeric
+    # -----------------------------------------------------
+
+    for col in [
+        "Tanggal",
+        "Bulan",
+        "Tahun",
+        "Target",
+        "Actual"
+    ]:
+        chart_df[col] = pd.to_numeric(
+            chart_df[col],
+            errors="coerce"
+        ).fillna(0)
+
+    # -----------------------------------------------------
+    # Urutkan berdasarkan tanggal
     # -----------------------------------------------------
 
     chart_df = chart_df.sort_values(
         [
+            "Program",
             "Tahun",
             "Bulan",
             "Tanggal"
@@ -811,15 +858,17 @@ def create_participant_chart(df):
 
     # -----------------------------------------------------
     # Ambil DATA TERAKHIR setiap bulan
+    # -----------------------------------------------------
     #
     # Contoh:
     #
-    # Juli:
+    # Juli
     # 4 Juli  -> Target 10, Actual 8
     # 11 Juli -> Target 10, Actual 10
     #
-    # Yang dipakai:
-    # 11 Juli -> 10 vs 10
+    # Yang digunakan:
+    # 11 Juli -> Target 10, Actual 10
+    #
     # -----------------------------------------------------
 
     monthly_df = (
@@ -837,7 +886,7 @@ def create_participant_chart(df):
     )
 
     # -----------------------------------------------------
-    # Buat nama bulan
+    # Mapping nama bulan
     # -----------------------------------------------------
 
     month_names = {
@@ -861,6 +910,26 @@ def create_participant_chart(df):
     )
 
     # -----------------------------------------------------
+    # Buat tanggal periode untuk sumbu X
+    # -----------------------------------------------------
+
+    monthly_df["Tanggal Periode"] = pd.to_datetime(
+        dict(
+            year=monthly_df["Tahun"].astype(int),
+            month=monthly_df["Bulan"].astype(int),
+            day=1
+        ),
+        errors="coerce"
+    )
+
+    monthly_df = monthly_df.sort_values(
+        [
+            "Program",
+            "Tanggal Periode"
+        ]
+    )
+
+    # -----------------------------------------------------
     # Long format
     # -----------------------------------------------------
 
@@ -871,6 +940,7 @@ def create_participant_chart(df):
             "Bulan",
             "Nama Bulan",
             "Tanggal",
+            "Tanggal Periode",
             "Target",
             "Actual"
         ]
@@ -882,7 +952,8 @@ def create_participant_chart(df):
             "Tahun",
             "Bulan",
             "Nama Bulan",
-            "Tanggal"
+            "Tanggal",
+            "Tanggal Periode"
         ],
         value_vars=[
             "Target",
@@ -893,18 +964,18 @@ def create_participant_chart(df):
     )
 
     # -----------------------------------------------------
-    # Chart
+    # LINE CHART
     # -----------------------------------------------------
 
-    fig = px.bar(
+    fig = px.line(
         plot_df,
-        x="Nama Bulan",
+        x="Tanggal Periode",
         y="Peserta",
         color="Jenis",
-        barmode="group",
-        text_auto=True,
-        facet_col="Program",
+        markers=True,
+        line_dash="Program",
         hover_data=[
+            "Program",
             "Tahun",
             "Tanggal"
         ],
@@ -916,6 +987,10 @@ def create_participant_chart(df):
         yaxis_title="Jumlah Peserta",
         legend_title="",
         hovermode="x unified"
+    )
+
+    fig.update_xaxes(
+        tickformat="%b %Y"
     )
 
     return fig
