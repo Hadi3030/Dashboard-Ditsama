@@ -76,13 +76,9 @@ try:
         sheets
     )
 
-    data_loaded = True
-
 except Exception as e:
 
     financial_df = pd.DataFrame()
-
-    data_loaded = False
 
     st.error(
         "Gagal mengambil data Financial Performance."
@@ -94,7 +90,7 @@ except Exception as e:
 
 
 # =========================================================
-# SIDEBAR / CONTROL
+# SIDEBAR
 # =========================================================
 
 st.sidebar.title("CONTROL")
@@ -110,9 +106,7 @@ if (
 ):
 
     program_list = sorted(
-        financial_df[
-            "Program"
-        ]
+        financial_df["Program"]
         .dropna()
         .astype(str)
         .unique()
@@ -137,27 +131,40 @@ with st.sidebar.expander(
     # SEMUA PROGRAM
     # -----------------------------------------------------
 
-    select_all = st.checkbox(
+    if "select_all_program" not in st.session_state:
+
+        st.session_state[
+            "select_all_program"
+        ] = True
+
+
+    st.checkbox(
         "Semua Program",
-        value=True,
         key="select_all_program"
     )
 
 
     # -----------------------------------------------------
-    # PROGRAM YANG DIPILIH
+    # CHECKBOX PROGRAM
     # -----------------------------------------------------
 
     program_filter = []
 
-
     for program in program_list:
+
+        key = f"program_{program}"
+
+        # Inisialisasi pertama kali
+        if key not in st.session_state:
+
+            st.session_state[key] = True
+
 
         selected = st.checkbox(
             program,
-            value=select_all,
-            key=f"program_{program}"
+            key=key
         )
+
 
         if selected:
 
@@ -202,14 +209,14 @@ else:
     year_list = [2026]
 
 
-year_options = [
+tahun_options = [
     "Semua Tahun"
 ] + year_list
 
 
 tahun_filter = st.sidebar.selectbox(
     "Tahun",
-    year_options,
+    tahun_options,
     key="tahun_filter"
 )
 
@@ -235,23 +242,24 @@ bulan_mapping = {
 
 }
 
+
 bulan_list = list(
     bulan_mapping.keys()
 )
 
 
 # =========================================================
-# INISIALISASI STATE BULAN
+# INISIALISASI BULAN
 # =========================================================
-
-# Pada saat dashboard pertama kali dibuka,
-# semua bulan dianggap terpilih.
 
 if "bulan_initialized" not in st.session_state:
 
-    st.session_state["bulan_initialized"] = True
+    st.session_state[
+        "bulan_initialized"
+    ] = True
 
-    st.session_state["semua_bulan"] = True
+
+    # Awalnya semua bulan dipilih
 
     for bulan in bulan_list:
 
@@ -261,20 +269,32 @@ if "bulan_initialized" not in st.session_state:
 
 
 # =========================================================
-# FUNGSI KETIKA "SEMUA BULAN" DIUBAH
+# FUNGSI SEMUA BULAN
 # =========================================================
 
-def update_semua_bulan():
+def pilih_semua_bulan():
 
-    nilai_semua = st.session_state[
+    nilai = st.session_state[
         "semua_bulan"
     ]
+
 
     for bulan in bulan_list:
 
         st.session_state[
             f"bulan_{bulan}"
-        ] = nilai_semua
+        ] = nilai
+
+
+# =========================================================
+# INISIALISASI CHECKBOX SEMUA BULAN
+# =========================================================
+
+if "semua_bulan" not in st.session_state:
+
+    st.session_state[
+        "semua_bulan"
+    ] = True
 
 
 # =========================================================
@@ -287,18 +307,18 @@ with st.sidebar.expander(
 ):
 
     # -----------------------------------------------------
-    # CHECKBOX SEMUA BULAN
+    # SEMUA BULAN
     # -----------------------------------------------------
 
     st.checkbox(
         "Semua Bulan",
         key="semua_bulan",
-        on_change=update_semua_bulan
+        on_change=pilih_semua_bulan
     )
 
 
     # -----------------------------------------------------
-    # CHECKBOX SETIAP BULAN
+    # CHECKBOX BULAN
     # -----------------------------------------------------
 
     for bulan in bulan_list:
@@ -328,7 +348,7 @@ bulan_filter = [
 
 
 # =========================================================
-# CEK APAKAH SEMUA BULAN TERPILIH
+# CEK SEMUA BULAN
 # =========================================================
 
 semua_bulan_terpilih = (
@@ -336,51 +356,6 @@ semua_bulan_terpilih = (
 )
 
 
-# =========================================================
-# FILTER DATA BERDASARKAN BULAN
-# =========================================================
-
-# Jika semua bulan dipilih,
-# jangan melakukan filter bulan.
-
-if (
-    not semua_bulan_terpilih
-    and len(bulan_filter) > 0
-    and "Bulan" in filtered_df.columns
-):
-
-    # Ubah nama bulan menjadi angka.
-
-    bulan_number = [
-
-        bulan_mapping[bulan]
-
-        for bulan in bulan_filter
-
-    ]
-
-
-    # Filter data berdasarkan bulan yang dipilih.
-
-    filtered_df = filtered_df[
-        pd.to_numeric(
-            filtered_df["Bulan"],
-            errors="coerce"
-        ).isin(
-            bulan_number
-        )
-    ]
-
-
-# Jika tidak ada bulan yang dipilih,
-# kosongkan data.
-
-elif (
-    len(bulan_filter) == 0
-    and "Bulan" in filtered_df.columns
-):
-
-    filtered_df = filtered_df.iloc[0:0]
 # =========================================================
 # 5. REFRESH DATA
 # =========================================================
@@ -395,8 +370,12 @@ if st.sidebar.button(
 
 
 # =========================================================
-# FILTER DATA
+# MULAI FILTER DATA
 # =========================================================
+
+# PENTING:
+# filtered_df HARUS dibuat terlebih dahulu
+# sebelum semua filter diterapkan.
 
 filtered_df = financial_df.copy()
 
@@ -408,17 +387,14 @@ filtered_df = financial_df.copy()
 if program_filter:
 
     filtered_df = filtered_df[
-        filtered_df[
-            "Program"
-        ].isin(
+        filtered_df["Program"].isin(
             program_filter
         )
     ]
 
 else:
 
-    # Kalau tidak ada program yang dicentang,
-    # maka hasil data dibuat kosong.
+    # Tidak ada program yang dipilih
 
     filtered_df = filtered_df.iloc[0:0]
 
@@ -447,7 +423,8 @@ if tahun_filter != "Semua Tahun":
         pd.to_numeric(
             filtered_df["Tahun"],
             errors="coerce"
-        ) == int(tahun_filter)
+        )
+        == int(tahun_filter)
     ]
 
 
@@ -455,42 +432,55 @@ if tahun_filter != "Semua Tahun":
 # FILTER 4 — BULAN
 # =========================================================
 
-# Kalau "Semua Bulan" tidak dicentang,
-# kita hanya mengambil bulan yang dicentang.
+# Jika semua bulan dipilih,
+# tidak perlu melakukan filter.
 
-if (
-    not semua_bulan
-    and len(bulan_filter) > 0
-    and "Bulan" in filtered_df.columns
-):
+if not semua_bulan_terpilih:
 
-    # Ubah nama bulan menjadi nomor bulan.
-    #
-    # Contoh:
-    # Januari = 1
-    # Juni    = 6
-    # Juli    = 7
+    # -----------------------------------------------------
+    # Jika ada bulan yang dipilih
+    # -----------------------------------------------------
 
-    bulan_number = [
-        bulan_mapping[bulan]
-        for bulan in bulan_filter
-    ]
+    if (
+        len(bulan_filter) > 0
+        and "Bulan" in filtered_df.columns
+    ):
 
+        # Ubah nama bulan menjadi angka.
+        #
+        # Contoh:
+        # Januari = 1
+        # Juni    = 6
+        # Juli    = 7
 
-    # Filter dataframe berdasarkan nomor bulan.
+        bulan_number = [
 
-    filtered_df = filtered_df[
-        pd.to_numeric(
-            filtered_df["Bulan"],
-            errors="coerce"
-        ).isin(
-            bulan_number
-        )
-    ]
+            bulan_mapping[bulan]
+
+            for bulan in bulan_filter
+
+        ]
 
 
-# Kalau "Semua Bulan" dicentang,
-# tidak ada filter bulan yang diterapkan.
+        # Filter berdasarkan nomor bulan
+
+        filtered_df = filtered_df[
+            pd.to_numeric(
+                filtered_df["Bulan"],
+                errors="coerce"
+            ).isin(
+                bulan_number
+            )
+        ]
+
+
+    # -----------------------------------------------------
+    # Jika tidak ada bulan yang dipilih
+    # -----------------------------------------------------
+
+    else:
+
+        filtered_df = filtered_df.iloc[0:0]
 
 
 # =========================================================
@@ -504,9 +494,7 @@ if not filtered_df.empty:
     # -----------------------------------------------------
 
     total_program = (
-        filtered_df[
-            "Program"
-        ]
+        filtered_df["Program"]
         .nunique()
     )
 
@@ -560,7 +548,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 
 # =========================================================
-# KPI 1 — TOTAL PROGRAM
+# KPI 1
 # =========================================================
 
 with col1:
@@ -572,7 +560,7 @@ with col1:
 
 
 # =========================================================
-# KPI 2 — TOTAL NILAI PENGAJUAN
+# KPI 2
 # =========================================================
 
 with col2:
@@ -584,7 +572,7 @@ with col2:
 
 
 # =========================================================
-# KPI 3 — SISA SALDO
+# KPI 3
 # =========================================================
 
 with col3:
@@ -596,7 +584,7 @@ with col3:
 
 
 # =========================================================
-# KPI 4 — MANAGEMENT ALERT
+# KPI 4
 # =========================================================
 
 with col4:
@@ -629,9 +617,6 @@ with col_left:
 
 
     if not filtered_df.empty:
-
-        # Grafik menggunakan data yang
-        # SUDAH mengikuti seluruh filter.
 
         financial_chart = create_financial_chart(
             filtered_df
