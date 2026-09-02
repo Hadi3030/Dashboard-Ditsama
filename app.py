@@ -120,11 +120,53 @@ else:
     program_list = []
 
 
-program_filter = st.sidebar.multiselect(
-    "Pilih Program",
-    program_list,
-    default=program_list
-)
+# =========================================================
+# PROGRAM FILTER
+# =========================================================
+
+if not financial_df.empty:
+
+    program_list = sorted(
+        financial_df[
+            "Program"
+        ]
+        .dropna()
+        .unique()
+        .tolist()
+    )
+
+else:
+
+    program_list = []
+
+
+# ---------------------------------------------------------
+# PROGRAM CHECKBOX DROPDOWN
+# ---------------------------------------------------------
+
+with st.sidebar.expander(
+    "☑  Pilih Program",
+    expanded=False
+):
+
+    select_all = st.checkbox(
+        "Semua Program",
+        value=True,
+        key="select_all_program"
+    )
+
+    program_filter = []
+
+    for program in program_list:
+
+        selected = st.checkbox(
+            program,
+            value=select_all,
+            key=f"program_{program}"
+        )
+
+        if selected:
+            program_filter.append(program)
 
 
 # =========================================================
