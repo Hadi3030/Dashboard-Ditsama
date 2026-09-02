@@ -14,7 +14,7 @@ from config.data_sources import EXCEL_URLS
 # =========================================================
 # PAGE CONFIGURATION
 # =========================================================
-# Pengaturan dasar halaman dashboard
+# Pengaturan dasar halaman dashboard.
 
 st.set_page_config(
     page_title="Dashboard Program Ditsama 2026",
@@ -54,7 +54,6 @@ except FileNotFoundError:
 # =========================================================
 # HEADER
 # =========================================================
-# Judul utama dashboard
 
 st.title(
     "📊 Dashboard Program Ditsama 2026"
@@ -69,8 +68,7 @@ st.write(
 # =========================================================
 # LOAD DATA
 # =========================================================
-# Mengambil data dari sumber Excel
-# yang sudah didefinisikan di config.data_sources
+# Mengambil data dari Excel.
 
 try:
 
@@ -107,19 +105,78 @@ except Exception as e:
 #
 # "Tanggal Pengajuan"
 #
-# menjadi format tanggal yang dapat dibaca Pandas.
+# menjadi datetime.
+#
+# Kita buat khusus untuk nama bulan Bahasa Indonesia.
 #
 # Contoh:
-# 19 Juli 2026
-# akan dikenali sebagai tanggal.
 #
-# Filter BULAN nantinya mengambil informasi
-# bulan langsung dari kolom ini.
+# 19 Juli
+# 5 Agustus
+# 10 September 2026
+#
+# semuanya akan dapat dibaca oleh Pandas.
+
 
 if (
     not financial_df.empty
     and "Tanggal Pengajuan" in financial_df.columns
 ):
+
+    # -----------------------------------------------------
+    # MAPPING BULAN INDONESIA KE INGGRIS
+    # -----------------------------------------------------
+
+    bulan_id_to_en = {
+
+        "Januari": "January",
+        "Februari": "February",
+        "Maret": "March",
+        "April": "April",
+        "Mei": "May",
+        "Juni": "June",
+        "Juli": "July",
+        "Agustus": "August",
+        "September": "September",
+        "Oktober": "October",
+        "November": "November",
+        "Desember": "December"
+
+    }
+
+
+    # -----------------------------------------------------
+    # BERSIHKAN DATA TANGGAL
+    # -----------------------------------------------------
+
+    financial_df["Tanggal Pengajuan"] = (
+        financial_df["Tanggal Pengajuan"]
+        .astype(str)
+        .str.strip()
+    )
+
+
+    # -----------------------------------------------------
+    # UBAH NAMA BULAN INDONESIA
+    # MENJADI BAHASA INGGRIS
+    # -----------------------------------------------------
+
+    for bulan_id, bulan_en in bulan_id_to_en.items():
+
+        financial_df["Tanggal Pengajuan"] = (
+            financial_df["Tanggal Pengajuan"]
+            .str.replace(
+                bulan_id,
+                bulan_en,
+                case=False,
+                regex=False
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # KONVERSI MENJADI DATETIME
+    # -----------------------------------------------------
 
     financial_df["Tanggal Pengajuan"] = pd.to_datetime(
         financial_df["Tanggal Pengajuan"],
@@ -138,8 +195,7 @@ st.sidebar.title("CONTROL")
 # =========================================================
 # 1. PROGRAM FILTER
 # =========================================================
-# Mengambil daftar program yang tersedia
-# dari kolom "Program".
+# Mengambil semua nama program dari data.
 
 if (
     not financial_df.empty
@@ -160,16 +216,23 @@ else:
     program_list = []
 
 
-# ---------------------------------------------------------
+# =========================================================
 # PROGRAM CHECKBOX DROPDOWN
-# ---------------------------------------------------------
-# Daftar program disembunyikan di dalam expander.
+# =========================================================
+# Program disimpan di dalam expander.
 #
-# Jadi sidebar tidak langsung penuh dengan
-# daftar OSN, OPSI, Riset, dan sebagainya.
+# Ketika tertutup:
 #
-# User cukup klik "Pilih Program" untuk
-# membuka daftar checkbox.
+# ☑ Pilih Program
+#
+# Ketika diklik:
+#
+# Semua Program
+# ☑ OSN
+# ☑ OPSI
+# ☑ Riset
+# dst.
+
 
 with st.sidebar.expander(
     "☑  Pilih Program",
@@ -177,9 +240,8 @@ with st.sidebar.expander(
 ):
 
     # -----------------------------------------------------
-    # PILIH SEMUA PROGRAM
+    # SEMUA PROGRAM
     # -----------------------------------------------------
-    # Jika dicentang, semua program akan dipilih.
 
     select_all = st.checkbox(
         "Semua Program",
@@ -189,7 +251,7 @@ with st.sidebar.expander(
 
 
     # -----------------------------------------------------
-    # DAFTAR PROGRAM
+    # LIST PROGRAM TERPILIH
     # -----------------------------------------------------
 
     program_filter = []
@@ -213,15 +275,11 @@ with st.sidebar.expander(
 # =========================================================
 # 2. BIDANG FILTER
 # =========================================================
-# Untuk sementara pilihan Bidang masih "Semua Bidang".
-#
-# Nanti kalau data sudah memiliki kolom Bidang,
-# bagian ini bisa dikembangkan menjadi filter
-# seperti Program.
 
 bidang_filter = st.sidebar.selectbox(
     "Bidang",
-    ["Semua Bidang"]
+    ["Semua Bidang"],
+    key="bidang_filter"
 )
 
 
@@ -256,23 +314,20 @@ year_options = [
 
 tahun_filter = st.sidebar.selectbox(
     "Tahun",
-    year_options
+    year_options,
+    key="tahun_filter"
 )
 
 
 # =========================================================
 # 4. BULAN FILTER
 # =========================================================
-# Bulan TIDAK perlu dibuat sebagai kolom baru
-# di Excel.
-#
-# Bulan diambil langsung dari:
+# Bulan diambil dari:
 #
 # "Tanggal Pengajuan"
 #
-# Contoh:
-# 19 Juli 2026 -> Juli
-# 5 Agustus 2026 -> Agustus
+# Jadi tidak perlu ada kolom "Bulan" di Excel.
+
 
 bulan_mapping = {
 
@@ -301,14 +356,14 @@ bulan_options = [
 
 bulan_filter = st.sidebar.selectbox(
     "Bulan",
-    bulan_options
+    bulan_options,
+    key="bulan_filter"
 )
 
 
 # =========================================================
 # 5. REFRESH DATA
 # =========================================================
-# Tombol untuk mengambil data terbaru.
 
 if st.sidebar.button(
     "🔄 Refresh Data"
@@ -322,10 +377,7 @@ if st.sidebar.button(
 # =========================================================
 # FILTER DATA
 # =========================================================
-# Membuat salinan data awal.
-#
-# Semua filter Program, Tahun, dan Bulan
-# akan diterapkan ke dataframe ini.
+# Mulai dari seluruh data.
 
 filtered_df = financial_df.copy()
 
@@ -333,15 +385,6 @@ filtered_df = financial_df.copy()
 # =========================================================
 # FILTER 1 — PROGRAM
 # =========================================================
-# Karena Program menggunakan checkbox,
-# program_filter berbentuk LIST.
-#
-# Contoh:
-#
-# ["OSN", "OPSI", "Riset"]
-#
-# .isin() digunakan untuk mengambil
-# beberapa program sekaligus.
 
 if program_filter:
 
@@ -356,16 +399,34 @@ if program_filter:
 else:
 
     # Jika tidak ada program yang dipilih,
-    # tampilkan dataframe kosong.
+    # dataframe menjadi kosong.
 
     filtered_df = filtered_df.iloc[0:0]
 
 
 # =========================================================
-# FILTER 2 — TAHUN
+# FILTER 2 — BIDANG
 # =========================================================
-# Filter tahun hanya dilakukan jika user
-# tidak memilih "Semua Tahun".
+# Saat ini belum diterapkan karena data Bidang
+# belum tersedia sebagai filter.
+#
+# Nanti bisa dikembangkan jika kolom Bidang
+# sudah tersedia.
+
+
+if bidang_filter != "Semua Bidang":
+
+    if "Bidang" in filtered_df.columns:
+
+        filtered_df = filtered_df[
+            filtered_df["Bidang"]
+            == bidang_filter
+        ]
+
+
+# =========================================================
+# FILTER 3 — TAHUN
+# =========================================================
 
 if tahun_filter != "Semua Tahun":
 
@@ -377,17 +438,17 @@ if tahun_filter != "Semua Tahun":
 
 
 # =========================================================
-# FILTER 3 — BULAN
+# FILTER 4 — BULAN
 # =========================================================
-# Mengambil nomor bulan dari pilihan user.
+# Filter bulan berdasarkan:
+#
+# filtered_df["Tanggal Pengajuan"].dt.month
 #
 # Contoh:
 #
 # Juli -> 7
 # Agustus -> 8
-#
-# Kemudian membandingkannya dengan bulan
-# pada "Tanggal Pengajuan".
+
 
 if (
     bulan_filter != "Semua Bulan"
@@ -397,6 +458,7 @@ if (
     bulan_number = bulan_mapping[
         bulan_filter
     ]
+
 
     filtered_df = filtered_df[
         filtered_df[
@@ -408,8 +470,6 @@ if (
 # =========================================================
 # KPI CALCULATION
 # =========================================================
-# Menghitung nilai KPI berdasarkan data
-# yang sudah difilter.
 
 if not filtered_df.empty:
 
@@ -461,13 +521,12 @@ else:
 # =========================================================
 # KPI DISPLAY
 # =========================================================
-# Menampilkan 4 KPI utama.
 
 col1, col2, col3, col4 = st.columns(4)
 
 
 # ---------------------------------------------------------
-# KPI 1 — TOTAL PROGRAM
+# KPI 1
 # ---------------------------------------------------------
 
 with col1:
@@ -479,7 +538,7 @@ with col1:
 
 
 # ---------------------------------------------------------
-# KPI 2 — TOTAL NILAI PENGAJUAN
+# KPI 2
 # ---------------------------------------------------------
 
 with col2:
@@ -491,7 +550,7 @@ with col2:
 
 
 # ---------------------------------------------------------
-# KPI 3 — SISA SALDO
+# KPI 3
 # ---------------------------------------------------------
 
 with col3:
@@ -503,7 +562,7 @@ with col3:
 
 
 # ---------------------------------------------------------
-# KPI 4 — MANAGEMENT ALERT
+# KPI 4
 # ---------------------------------------------------------
 
 with col4:
@@ -538,11 +597,22 @@ with col_left:
 
     if not filtered_df.empty:
 
+        # -------------------------------------------------
+        # PENTING:
+        #
+        # Grafik HARUS menggunakan filtered_df,
+        # bukan financial_df.
+        #
+        # Dengan demikian ketika Program / Tahun /
+        # Bulan berubah, grafik ikut berubah.
+        # -------------------------------------------------
+
         financial_chart = (
             create_financial_chart(
                 filtered_df
             )
         )
+
 
         st.plotly_chart(
             financial_chart,
