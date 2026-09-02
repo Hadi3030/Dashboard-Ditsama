@@ -1,14 +1,713 @@
+# import streamlit as st
+# import pandas as pd
+
+# from src.load_data import load_all_sheets
+
+# from src.calculations import (
+#     extract_financial_performance,
+#     create_financial_chart
+# )
+
+# from config.data_sources import EXCEL_URLS
+
+
+# # =========================================================
+# # PAGE CONFIGURATION
+# # =========================================================
+
+# st.set_page_config(
+#     page_title="Dashboard Program Ditsama 2026",
+#     page_icon="📊",
+#     layout="wide"
+# )
+
+
+# # =========================================================
+# # LOAD CSS
+# # =========================================================
+
+# try:
+
+#     with open(
+#         "assets/style.css",
+#         "r",
+#         encoding="utf-8"
+#     ) as f:
+
+#         css = f.read()
+
+#     st.markdown(
+#         f"<style>{css}</style>",
+#         unsafe_allow_html=True
+#     )
+
+# except FileNotFoundError:
+
+#     st.warning(
+#         "File assets/style.css tidak ditemukan."
+#     )
+
+
+# # =========================================================
+# # HEADER
+# # =========================================================
+
+# st.title(
+#     "📊 Dashboard Program Ditsama 2026"
+# )
+
+# st.write(
+#     "Dashboard monitoring program, progress, "
+#     "financial performance, dan management alert."
+# )
+
+
+# # =========================================================
+# # LOAD DATA
+# # =========================================================
+
+# try:
+
+#     sheets = load_all_sheets(
+#         EXCEL_URLS["financial"]
+#     )
+
+#     financial_df = extract_financial_performance(
+#         sheets
+#     )
+
+# except Exception as e:
+
+#     financial_df = pd.DataFrame()
+
+#     st.error(
+#         "Gagal mengambil data Financial Performance."
+#     )
+
+#     st.caption(
+#         f"Detail error: {e}"
+#     )
+
+
+# # =========================================================
+# # SIDEBAR
+# # =========================================================
+
+# st.sidebar.title("CONTROL")
+
+
+# # =========================================================
+# # 1. PROGRAM FILTER
+# # =========================================================
+
+# if (
+#     not financial_df.empty
+#     and "Program" in financial_df.columns
+# ):
+
+#     program_list = sorted(
+#         financial_df["Program"]
+#         .dropna()
+#         .astype(str)
+#         .unique()
+#         .tolist()
+#     )
+
+# else:
+
+#     program_list = []
+
+
+# # =========================================================
+# # PROGRAM CHECKBOX DROPDOWN
+# # =========================================================
+
+# with st.sidebar.expander(
+#     "☑  Pilih Program",
+#     expanded=False
+# ):
+
+#     # -----------------------------------------------------
+#     # SEMUA PROGRAM
+#     # -----------------------------------------------------
+
+#     if "select_all_program" not in st.session_state:
+
+#         st.session_state[
+#             "select_all_program"
+#         ] = True
+
+
+#     st.checkbox(
+#         "Semua Program",
+#         key="select_all_program"
+#     )
+
+
+#     # -----------------------------------------------------
+#     # CHECKBOX PROGRAM
+#     # -----------------------------------------------------
+
+#     program_filter = []
+
+#     for program in program_list:
+
+#         key = f"program_{program}"
+
+#         # Inisialisasi pertama kali
+#         if key not in st.session_state:
+
+#             st.session_state[key] = True
+
+
+#         selected = st.checkbox(
+#             program,
+#             key=key
+#         )
+
+
+#         if selected:
+
+#             program_filter.append(
+#                 program
+#             )
+
+
+# # =========================================================
+# # 2. BIDANG FILTER
+# # =========================================================
+
+# bidang_filter = st.sidebar.selectbox(
+#     "Bidang",
+#     ["Semua Bidang"],
+#     key="bidang_filter"
+# )
+
+
+# # =========================================================
+# # 3. TAHUN FILTER
+# # =========================================================
+
+# if (
+#     not financial_df.empty
+#     and "Tahun" in financial_df.columns
+# ):
+
+#     year_list = sorted(
+#         pd.to_numeric(
+#             financial_df["Tahun"],
+#             errors="coerce"
+#         )
+#         .dropna()
+#         .astype(int)
+#         .unique()
+#         .tolist()
+#     )
+
+# else:
+
+#     year_list = [2026]
+
+
+# tahun_options = [
+#     "Semua Tahun"
+# ] + year_list
+
+
+# tahun_filter = st.sidebar.selectbox(
+#     "Tahun",
+#     tahun_options,
+#     key="tahun_filter"
+# )
+
+
+# # =========================================================
+# # 4. BULAN FILTER
+# # =========================================================
+
+# bulan_mapping = {
+
+#     "Januari": 1,
+#     "Februari": 2,
+#     "Maret": 3,
+#     "April": 4,
+#     "Mei": 5,
+#     "Juni": 6,
+#     "Juli": 7,
+#     "Agustus": 8,
+#     "September": 9,
+#     "Oktober": 10,
+#     "November": 11,
+#     "Desember": 12
+
+# }
+
+
+# bulan_list = list(
+#     bulan_mapping.keys()
+# )
+
+
+# # =========================================================
+# # INISIALISASI BULAN
+# # =========================================================
+
+# if "bulan_initialized" not in st.session_state:
+
+#     st.session_state[
+#         "bulan_initialized"
+#     ] = True
+
+
+#     # Awalnya semua bulan dipilih
+
+#     for bulan in bulan_list:
+
+#         st.session_state[
+#             f"bulan_{bulan}"
+#         ] = True
+
+
+# # =========================================================
+# # FUNGSI SEMUA BULAN
+# # =========================================================
+
+# def pilih_semua_bulan():
+
+#     nilai = st.session_state[
+#         "semua_bulan"
+#     ]
+
+
+#     for bulan in bulan_list:
+
+#         st.session_state[
+#             f"bulan_{bulan}"
+#         ] = nilai
+
+
+# # =========================================================
+# # INISIALISASI CHECKBOX SEMUA BULAN
+# # =========================================================
+
+# if "semua_bulan" not in st.session_state:
+
+#     st.session_state[
+#         "semua_bulan"
+#     ] = True
+
+
+# # =========================================================
+# # BULAN CHECKBOX DROPDOWN
+# # =========================================================
+
+# with st.sidebar.expander(
+#     "☑  Pilih Bulan",
+#     expanded=False
+# ):
+
+#     # -----------------------------------------------------
+#     # SEMUA BULAN
+#     # -----------------------------------------------------
+
+#     st.checkbox(
+#         "Semua Bulan",
+#         key="semua_bulan",
+#         on_change=pilih_semua_bulan
+#     )
+
+
+#     # -----------------------------------------------------
+#     # CHECKBOX BULAN
+#     # -----------------------------------------------------
+
+#     for bulan in bulan_list:
+
+#         st.checkbox(
+#             bulan,
+#             key=f"bulan_{bulan}"
+#         )
+
+
+# # =========================================================
+# # AMBIL BULAN YANG DIPILIH
+# # =========================================================
+
+# bulan_filter = [
+
+#     bulan
+
+#     for bulan in bulan_list
+
+#     if st.session_state.get(
+#         f"bulan_{bulan}",
+#         False
+#     )
+
+# ]
+
+
+# # =========================================================
+# # CEK SEMUA BULAN
+# # =========================================================
+
+# semua_bulan_terpilih = (
+#     len(bulan_filter) == len(bulan_list)
+# )
+
+
+# # =========================================================
+# # 5. REFRESH DATA
+# # =========================================================
+
+# if st.sidebar.button(
+#     "🔄 Refresh Data"
+# ):
+
+#     st.cache_data.clear()
+
+#     st.rerun()
+
+
+# # =========================================================
+# # MULAI FILTER DATA
+# # =========================================================
+
+# # PENTING:
+# # filtered_df HARUS dibuat terlebih dahulu
+# # sebelum semua filter diterapkan.
+
+# filtered_df = financial_df.copy()
+
+
+# # =========================================================
+# # FILTER 1 — PROGRAM
+# # =========================================================
+
+# if program_filter:
+
+#     filtered_df = filtered_df[
+#         filtered_df["Program"].isin(
+#             program_filter
+#         )
+#     ]
+
+# else:
+
+#     # Tidak ada program yang dipilih
+
+#     filtered_df = filtered_df.iloc[0:0]
+
+
+# # =========================================================
+# # FILTER 2 — BIDANG
+# # =========================================================
+
+# if bidang_filter != "Semua Bidang":
+
+#     if "Bidang" in filtered_df.columns:
+
+#         filtered_df = filtered_df[
+#             filtered_df["Bidang"]
+#             == bidang_filter
+#         ]
+
+
+# # =========================================================
+# # FILTER 3 — TAHUN
+# # =========================================================
+
+# if tahun_filter != "Semua Tahun":
+
+#     filtered_df = filtered_df[
+#         pd.to_numeric(
+#             filtered_df["Tahun"],
+#             errors="coerce"
+#         )
+#         == int(tahun_filter)
+#     ]
+
+
+# # =========================================================
+# # FILTER 4 — BULAN
+# # =========================================================
+
+# # Jika semua bulan dipilih,
+# # tidak perlu melakukan filter.
+
+# if not semua_bulan_terpilih:
+
+#     # -----------------------------------------------------
+#     # Jika ada bulan yang dipilih
+#     # -----------------------------------------------------
+
+#     if (
+#         len(bulan_filter) > 0
+#         and "Bulan" in filtered_df.columns
+#     ):
+
+#         # Ubah nama bulan menjadi angka.
+#         #
+#         # Contoh:
+#         # Januari = 1
+#         # Juni    = 6
+#         # Juli    = 7
+
+#         bulan_number = [
+
+#             bulan_mapping[bulan]
+
+#             for bulan in bulan_filter
+
+#         ]
+
+
+#         # Filter berdasarkan nomor bulan
+
+#         filtered_df = filtered_df[
+#             pd.to_numeric(
+#                 filtered_df["Bulan"],
+#                 errors="coerce"
+#             ).isin(
+#                 bulan_number
+#             )
+#         ]
+
+
+#     # -----------------------------------------------------
+#     # Jika tidak ada bulan yang dipilih
+#     # -----------------------------------------------------
+
+#     else:
+
+#         filtered_df = filtered_df.iloc[0:0]
+
+
+# # =========================================================
+# # KPI CALCULATION
+# # =========================================================
+
+# if not filtered_df.empty:
+
+#     # -----------------------------------------------------
+#     # TOTAL PROGRAM
+#     # -----------------------------------------------------
+
+#     total_program = (
+#         filtered_df["Program"]
+#         .nunique()
+#     )
+
+
+#     # -----------------------------------------------------
+#     # TOTAL NILAI PENGAJUAN
+#     # -----------------------------------------------------
+
+#     total_pengajuan = (
+#         pd.to_numeric(
+#             filtered_df[
+#                 "Total Pengajuan"
+#             ],
+#             errors="coerce"
+#         )
+#         .fillna(0)
+#         .sum()
+#     )
+
+
+#     # -----------------------------------------------------
+#     # TOTAL SISA SALDO
+#     # -----------------------------------------------------
+
+#     total_saldo = (
+#         pd.to_numeric(
+#             filtered_df[
+#                 "Saldo Terakhir"
+#             ],
+#             errors="coerce"
+#         )
+#         .fillna(0)
+#         .sum()
+#     )
+
+
+# else:
+
+#     total_program = 0
+
+#     total_pengajuan = 0
+
+#     total_saldo = 0
+
+
+# # =========================================================
+# # KPI DISPLAY
+# # =========================================================
+
+# col1, col2, col3, col4 = st.columns(4)
+
+
+# # =========================================================
+# # KPI 1
+# # =========================================================
+
+# with col1:
+
+#     st.metric(
+#         "Total Program",
+#         total_program
+#     )
+
+
+# # =========================================================
+# # KPI 2
+# # =========================================================
+
+# with col2:
+
+#     st.metric(
+#         "Total Nilai Pengajuan",
+#         f"Rp {total_pengajuan:,.0f}"
+#     )
+
+
+# # =========================================================
+# # KPI 3
+# # =========================================================
+
+# with col3:
+
+#     st.metric(
+#         "Sisa Saldo",
+#         f"Rp {total_saldo:,.0f}"
+#     )
+
+
+# # =========================================================
+# # KPI 4
+# # =========================================================
+
+# with col4:
+
+#     st.metric(
+#         "Management Alert",
+#         "0"
+#     )
+
+
+# # =========================================================
+# # FINANCIAL PERFORMANCE
+# # & PARTICIPANT TARGET
+# # =========================================================
+
+# col_left, col_right = st.columns(
+#     [1, 1]
+# )
+
+
+# # =========================================================
+# # FINANCIAL PERFORMANCE
+# # =========================================================
+
+# with col_left:
+
+#     st.subheader(
+#         "Financial Performance"
+#     )
+
+
+#     if not filtered_df.empty:
+
+#         financial_chart = create_financial_chart(
+#             filtered_df
+#         )
+
+
+#         st.plotly_chart(
+#             financial_chart,
+#             use_container_width=True
+#         )
+
+#     else:
+
+#         st.info(
+#             "Belum ada data Financial Performance "
+#             "berdasarkan filter yang dipilih."
+#         )
+
+
+# # =========================================================
+# # PARTICIPANT TARGET
+# # =========================================================
+
+# with col_right:
+
+#     st.subheader(
+#         "Participant Target"
+#     )
+
+#     st.info(
+#         "Data Participant Target "
+#         "akan ditampilkan di sini."
+#     )
+
+
+# # =========================================================
+# # PROGRAM PROGRESS
+# # =========================================================
+
+# st.subheader(
+#     "Program Progress"
+# )
+
+# st.info(
+#     "Grafik Program Progress "
+#     "akan ditampilkan di sini."
+# )
+
+
+# # =========================================================
+# # MANAGEMENT ALERT
+# # =========================================================
+
+# st.subheader(
+#     "Management Alert"
+# )
+
+# st.info(
+#     "Management Alert akan muncul "
+#     "setelah data program terhubung."
+# )
+
+# =========================================================
+# DASHBOARD PROGRAM DITSAMA 2026
+# =========================================================
+
 import streamlit as st
 import pandas as pd
 
-from src.load_data import load_all_sheets
 
-from src.calculations import (
-    extract_financial_performance,
-    create_financial_chart
+from src.load_data import (
+    load_all_sheets
 )
 
-from config.data_sources import EXCEL_URLS
+
+from src.calculations import (
+
+    extract_financial_performance,
+
+    extract_participant_target,
+
+    create_financial_chart,
+
+    create_participant_chart
+
+)
+
+
+from config.data_sources import (
+    EXCEL_URLS
+)
 
 
 # =========================================================
@@ -16,9 +715,14 @@ from config.data_sources import EXCEL_URLS
 # =========================================================
 
 st.set_page_config(
-    page_title="Dashboard Program Ditsama 2026",
+
+    page_title=
+        "Dashboard Program Ditsama 2026",
+
     page_icon="📊",
+
     layout="wide"
+
 )
 
 
@@ -29,17 +733,26 @@ st.set_page_config(
 try:
 
     with open(
+
         "assets/style.css",
+
         "r",
+
         encoding="utf-8"
+
     ) as f:
 
         css = f.read()
 
+
     st.markdown(
+
         f"<style>{css}</style>",
+
         unsafe_allow_html=True
+
     )
+
 
 except FileNotFoundError:
 
@@ -56,32 +769,82 @@ st.title(
     "📊 Dashboard Program Ditsama 2026"
 )
 
+
 st.write(
+
     "Dashboard monitoring program, progress, "
     "financial performance, dan management alert."
+
 )
 
 
 # =========================================================
-# LOAD DATA
+# LOAD DATA FINANCIAL
 # =========================================================
+
+financial_df = pd.DataFrame()
+
 
 try:
 
-    sheets = load_all_sheets(
+    financial_sheets = load_all_sheets(
+
         EXCEL_URLS["financial"]
+
     )
 
-    financial_df = extract_financial_performance(
-        sheets
+
+    financial_df = (
+        extract_financial_performance(
+            financial_sheets
+        )
     )
+
 
 except Exception as e:
 
-    financial_df = pd.DataFrame()
+    st.error(
+
+        "Gagal mengambil data "
+        "Financial Performance."
+
+    )
+
+    st.caption(
+        f"Detail error: {e}"
+    )
+
+
+# =========================================================
+# LOAD DATA PARTICIPANT
+# =========================================================
+
+participant_df = pd.DataFrame()
+
+
+try:
+
+    participant_sheets = load_all_sheets(
+
+        EXCEL_URLS["participant"]
+
+    )
+
+
+    participant_df = (
+        extract_participant_target(
+            participant_sheets
+        )
+    )
+
+
+except Exception as e:
 
     st.error(
-        "Gagal mengambil data Financial Performance."
+
+        "Gagal mengambil data "
+        "Participant Target & Actual."
+
     )
 
     st.caption(
@@ -93,45 +856,103 @@ except Exception as e:
 # SIDEBAR
 # =========================================================
 
-st.sidebar.title("CONTROL")
+st.sidebar.title(
+    "CONTROL"
+)
 
 
 # =========================================================
 # 1. PROGRAM FILTER
 # =========================================================
 
+program_values = []
+
+
+# ---------------------------------------------------------
+# Ambil program dari Financial
+# ---------------------------------------------------------
+
 if (
+
     not financial_df.empty
-    and "Program" in financial_df.columns
+
+    and
+
+    "Program"
+    in financial_df.columns
+
 ):
 
-    program_list = sorted(
-        financial_df["Program"]
+    program_values.extend(
+
+        financial_df[
+            "Program"
+        ]
         .dropna()
         .astype(str)
-        .unique()
         .tolist()
+
     )
 
-else:
 
-    program_list = []
+# ---------------------------------------------------------
+# Ambil program dari Participant
+# ---------------------------------------------------------
+
+if (
+
+    not participant_df.empty
+
+    and
+
+    "Program"
+    in participant_df.columns
+
+):
+
+    program_values.extend(
+
+        participant_df[
+            "Program"
+        ]
+        .dropna()
+        .astype(str)
+        .tolist()
+
+    )
+
+
+# ---------------------------------------------------------
+# Gabungkan program
+# ---------------------------------------------------------
+
+program_list = sorted(
+
+    set(program_values)
+
+)
 
 
 # =========================================================
-# PROGRAM CHECKBOX DROPDOWN
+# PROGRAM CHECKBOX
 # =========================================================
 
 with st.sidebar.expander(
+
     "☑  Pilih Program",
+
     expanded=False
+
 ):
 
     # -----------------------------------------------------
     # SEMUA PROGRAM
     # -----------------------------------------------------
 
-    if "select_all_program" not in st.session_state:
+    if (
+        "select_all_program"
+        not in st.session_state
+    ):
 
         st.session_state[
             "select_all_program"
@@ -139,30 +960,39 @@ with st.sidebar.expander(
 
 
     st.checkbox(
+
         "Semua Program",
+
         key="select_all_program"
+
     )
 
 
     # -----------------------------------------------------
-    # CHECKBOX PROGRAM
+    # PROGRAM
     # -----------------------------------------------------
 
     program_filter = []
 
+
     for program in program_list:
 
-        key = f"program_{program}"
+        key = (
+            f"program_{program}"
+        )
 
-        # Inisialisasi pertama kali
+
         if key not in st.session_state:
 
             st.session_state[key] = True
 
 
         selected = st.checkbox(
+
             program,
+
             key=key
+
         )
 
 
@@ -173,56 +1003,143 @@ with st.sidebar.expander(
             )
 
 
+    # -----------------------------------------------------
+    # Jika Semua Program aktif
+    # -----------------------------------------------------
+
+    if st.session_state[
+        "select_all_program"
+    ]:
+
+        program_filter = program_list.copy()
+
+
 # =========================================================
-# 2. BIDANG FILTER
+# 2. BIDANG
 # =========================================================
 
 bidang_filter = st.sidebar.selectbox(
+
     "Bidang",
-    ["Semua Bidang"],
+
+    [
+        "Semua Bidang"
+    ],
+
     key="bidang_filter"
+
 )
 
 
 # =========================================================
-# 3. TAHUN FILTER
+# 3. TAHUN
 # =========================================================
 
+year_values = []
+
+
+# ---------------------------------------------------------
+# Financial year
+# ---------------------------------------------------------
+
 if (
+
     not financial_df.empty
-    and "Tahun" in financial_df.columns
+
+    and
+
+    "Tahun"
+    in financial_df.columns
+
 ):
 
-    year_list = sorted(
+    year_values.extend(
+
         pd.to_numeric(
-            financial_df["Tahun"],
+
+            financial_df[
+                "Tahun"
+            ],
+
             errors="coerce"
+
         )
         .dropna()
         .astype(int)
-        .unique()
         .tolist()
+
     )
 
-else:
+
+# ---------------------------------------------------------
+# Participant year
+# ---------------------------------------------------------
+
+if (
+
+    not participant_df.empty
+
+    and
+
+    "Tahun"
+    in participant_df.columns
+
+):
+
+    year_values.extend(
+
+        pd.to_numeric(
+
+            participant_df[
+                "Tahun"
+            ],
+
+            errors="coerce"
+
+        )
+        .dropna()
+        .astype(int)
+        .tolist()
+
+    )
+
+
+# ---------------------------------------------------------
+# Gabungkan tahun
+# ---------------------------------------------------------
+
+year_list = sorted(
+
+    set(year_values)
+
+)
+
+
+if not year_list:
 
     year_list = [2026]
 
 
 tahun_options = [
+
     "Semua Tahun"
+
 ] + year_list
 
 
 tahun_filter = st.sidebar.selectbox(
+
     "Tahun",
+
     tahun_options,
+
     key="tahun_filter"
+
 )
 
 
 # =========================================================
-# 4. BULAN FILTER
+# 4. BULAN
 # =========================================================
 
 bulan_mapping = {
@@ -249,17 +1166,18 @@ bulan_list = list(
 
 
 # =========================================================
-# INISIALISASI BULAN
+# INIT BULAN
 # =========================================================
 
-if "bulan_initialized" not in st.session_state:
+if (
+    "bulan_initialized"
+    not in st.session_state
+):
 
     st.session_state[
         "bulan_initialized"
     ] = True
 
-
-    # Awalnya semua bulan dipilih
 
     for bulan in bulan_list:
 
@@ -287,10 +1205,13 @@ def pilih_semua_bulan():
 
 
 # =========================================================
-# INISIALISASI CHECKBOX SEMUA BULAN
+# INIT SEMUA BULAN
 # =========================================================
 
-if "semua_bulan" not in st.session_state:
+if (
+    "semua_bulan"
+    not in st.session_state
+):
 
     st.session_state[
         "semua_bulan"
@@ -298,39 +1219,42 @@ if "semua_bulan" not in st.session_state:
 
 
 # =========================================================
-# BULAN CHECKBOX DROPDOWN
+# BULAN DROPDOWN
 # =========================================================
 
 with st.sidebar.expander(
+
     "☑  Pilih Bulan",
+
     expanded=False
+
 ):
 
-    # -----------------------------------------------------
-    # SEMUA BULAN
-    # -----------------------------------------------------
-
     st.checkbox(
+
         "Semua Bulan",
+
         key="semua_bulan",
-        on_change=pilih_semua_bulan
+
+        on_change=
+            pilih_semua_bulan
+
     )
 
-
-    # -----------------------------------------------------
-    # CHECKBOX BULAN
-    # -----------------------------------------------------
 
     for bulan in bulan_list:
 
         st.checkbox(
+
             bulan,
+
             key=f"bulan_{bulan}"
+
         )
 
 
 # =========================================================
-# AMBIL BULAN YANG DIPILIH
+# BULAN TERPILIH
 # =========================================================
 
 bulan_filter = [
@@ -340,28 +1264,33 @@ bulan_filter = [
     for bulan in bulan_list
 
     if st.session_state.get(
+
         f"bulan_{bulan}",
+
         False
+
     )
 
 ]
 
 
-# =========================================================
-# CEK SEMUA BULAN
-# =========================================================
-
 semua_bulan_terpilih = (
-    len(bulan_filter) == len(bulan_list)
+
+    len(bulan_filter)
+    ==
+    len(bulan_list)
+
 )
 
 
 # =========================================================
-# 5. REFRESH DATA
+# REFRESH DATA
 # =========================================================
 
 if st.sidebar.button(
+
     "🔄 Refresh Data"
+
 ):
 
     st.cache_data.clear()
@@ -370,166 +1299,339 @@ if st.sidebar.button(
 
 
 # =========================================================
-# MULAI FILTER DATA
+# FILTER FINANCIAL
 # =========================================================
-
-# PENTING:
-# filtered_df HARUS dibuat terlebih dahulu
-# sebelum semua filter diterapkan.
 
 filtered_df = financial_df.copy()
 
 
 # =========================================================
-# FILTER 1 — PROGRAM
+# FILTER PROGRAM
 # =========================================================
 
-if program_filter:
+if (
+
+    program_filter
+
+    and
+
+    "Program"
+    in filtered_df.columns
+
+):
 
     filtered_df = filtered_df[
-        filtered_df["Program"].isin(
+
+        filtered_df[
+            "Program"
+        ].isin(
             program_filter
         )
+
     ]
 
 else:
 
-    # Tidak ada program yang dipilih
-
-    filtered_df = filtered_df.iloc[0:0]
+    filtered_df = (
+        filtered_df.iloc[0:0]
+    )
 
 
 # =========================================================
-# FILTER 2 — BIDANG
+# FILTER BIDANG
 # =========================================================
 
-if bidang_filter != "Semua Bidang":
+if (
 
-    if "Bidang" in filtered_df.columns:
+    bidang_filter
+    !=
+    "Semua Bidang"
+
+):
+
+    if (
+        "Bidang"
+        in filtered_df.columns
+    ):
 
         filtered_df = filtered_df[
-            filtered_df["Bidang"]
-            == bidang_filter
+
+            filtered_df[
+                "Bidang"
+            ]
+            ==
+            bidang_filter
+
         ]
 
 
 # =========================================================
-# FILTER 3 — TAHUN
+# FILTER TAHUN
 # =========================================================
 
-if tahun_filter != "Semua Tahun":
+if (
+
+    tahun_filter
+    !=
+    "Semua Tahun"
+
+):
 
     filtered_df = filtered_df[
+
         pd.to_numeric(
-            filtered_df["Tahun"],
+
+            filtered_df[
+                "Tahun"
+            ],
+
             errors="coerce"
+
         )
-        == int(tahun_filter)
+        ==
+        int(tahun_filter)
+
     ]
 
 
 # =========================================================
-# FILTER 4 — BULAN
+# FILTER BULAN
 # =========================================================
-
-# Jika semua bulan dipilih,
-# tidak perlu melakukan filter.
 
 if not semua_bulan_terpilih:
 
-    # -----------------------------------------------------
-    # Jika ada bulan yang dipilih
-    # -----------------------------------------------------
-
     if (
-        len(bulan_filter) > 0
-        and "Bulan" in filtered_df.columns
-    ):
 
-        # Ubah nama bulan menjadi angka.
-        #
-        # Contoh:
-        # Januari = 1
-        # Juni    = 6
-        # Juli    = 7
+        len(bulan_filter) > 0
+
+        and
+
+        "Bulan"
+        in filtered_df.columns
+
+    ):
 
         bulan_number = [
 
-            bulan_mapping[bulan]
+            bulan_mapping[
+                bulan
+            ]
 
-            for bulan in bulan_filter
+            for bulan
+            in bulan_filter
 
         ]
 
 
-        # Filter berdasarkan nomor bulan
-
         filtered_df = filtered_df[
+
             pd.to_numeric(
-                filtered_df["Bulan"],
+
+                filtered_df[
+                    "Bulan"
+                ],
+
                 errors="coerce"
+
             ).isin(
                 bulan_number
             )
+
         ]
-
-
-    # -----------------------------------------------------
-    # Jika tidak ada bulan yang dipilih
-    # -----------------------------------------------------
 
     else:
 
-        filtered_df = filtered_df.iloc[0:0]
+        filtered_df = (
+            filtered_df.iloc[0:0]
+        )
 
 
 # =========================================================
-# KPI CALCULATION
+# FILTER PARTICIPANT
+# =========================================================
+
+filtered_participant_df = (
+    participant_df.copy()
+)
+
+
+# =========================================================
+# SAFETY COLUMN
+# =========================================================
+
+required_participant_columns = [
+
+    "Program",
+    "Tahun",
+    "Bulan",
+    "Tanggal",
+    "Target",
+    "Actual"
+
+]
+
+
+for column in required_participant_columns:
+
+    if column not in (
+        filtered_participant_df.columns
+    ):
+
+        filtered_participant_df[
+            column
+        ] = pd.Series(
+            dtype="object"
+        )
+
+
+# =========================================================
+# PARTICIPANT — PROGRAM
+# =========================================================
+
+if program_filter:
+
+    filtered_participant_df = (
+        filtered_participant_df[
+
+            filtered_participant_df[
+                "Program"
+            ].isin(
+                program_filter
+            )
+
+        ]
+    )
+
+else:
+
+    filtered_participant_df = (
+        filtered_participant_df.iloc[0:0]
+    )
+
+
+# =========================================================
+# PARTICIPANT — TAHUN
+# =========================================================
+
+if (
+
+    tahun_filter
+    !=
+    "Semua Tahun"
+
+):
+
+    filtered_participant_df = (
+        filtered_participant_df[
+
+            pd.to_numeric(
+
+                filtered_participant_df[
+                    "Tahun"
+                ],
+
+                errors="coerce"
+
+            )
+            ==
+            int(tahun_filter)
+
+        ]
+    )
+
+
+# =========================================================
+# PARTICIPANT — BULAN
+# =========================================================
+
+if not semua_bulan_terpilih:
+
+    if len(bulan_filter) > 0:
+
+        bulan_number = [
+
+            bulan_mapping[
+                bulan
+            ]
+
+            for bulan
+            in bulan_filter
+
+        ]
+
+
+        filtered_participant_df = (
+            filtered_participant_df[
+
+                pd.to_numeric(
+
+                    filtered_participant_df[
+                        "Bulan"
+                    ],
+
+                    errors="coerce"
+
+                ).isin(
+                    bulan_number
+                )
+
+            ]
+        )
+
+    else:
+
+        filtered_participant_df = (
+            filtered_participant_df.iloc[0:0]
+        )
+
+
+# =========================================================
+# KPI
 # =========================================================
 
 if not filtered_df.empty:
 
-    # -----------------------------------------------------
-    # TOTAL PROGRAM
-    # -----------------------------------------------------
-
     total_program = (
-        filtered_df["Program"]
-        .nunique()
+
+        filtered_df[
+            "Program"
+        ].nunique()
+
     )
 
 
-    # -----------------------------------------------------
-    # TOTAL NILAI PENGAJUAN
-    # -----------------------------------------------------
-
     total_pengajuan = (
+
         pd.to_numeric(
+
             filtered_df[
                 "Total Pengajuan"
             ],
+
             errors="coerce"
+
         )
         .fillna(0)
         .sum()
+
     )
 
 
-    # -----------------------------------------------------
-    # TOTAL SISA SALDO
-    # -----------------------------------------------------
-
     total_saldo = (
+
         pd.to_numeric(
+
             filtered_df[
                 "Saldo Terakhir"
             ],
+
             errors="coerce"
+
         )
         .fillna(0)
         .sum()
-    )
 
+    )
 
 else:
 
@@ -554,8 +1656,11 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
 
     st.metric(
+
         "Total Program",
+
         total_program
+
     )
 
 
@@ -566,8 +1671,11 @@ with col1:
 with col2:
 
     st.metric(
+
         "Total Nilai Pengajuan",
+
         f"Rp {total_pengajuan:,.0f}"
+
     )
 
 
@@ -578,8 +1686,11 @@ with col2:
 with col3:
 
     st.metric(
+
         "Sisa Saldo",
+
         f"Rp {total_saldo:,.0f}"
+
     )
 
 
@@ -590,18 +1701,22 @@ with col3:
 with col4:
 
     st.metric(
+
         "Management Alert",
+
         "0"
+
     )
 
 
 # =========================================================
-# FINANCIAL PERFORMANCE
-# & PARTICIPANT TARGET
+# FINANCIAL + PARTICIPANT
 # =========================================================
 
 col_left, col_right = st.columns(
+
     [1, 1]
+
 )
 
 
@@ -618,21 +1733,29 @@ with col_left:
 
     if not filtered_df.empty:
 
-        financial_chart = create_financial_chart(
-            filtered_df
+        financial_chart = (
+            create_financial_chart(
+                filtered_df
+            )
         )
 
 
         st.plotly_chart(
+
             financial_chart,
+
             use_container_width=True
+
         )
 
     else:
 
         st.info(
-            "Belum ada data Financial Performance "
-            "berdasarkan filter yang dipilih."
+
+            "Belum ada data Financial "
+            "Performance berdasarkan "
+            "filter yang dipilih."
+
         )
 
 
@@ -646,10 +1769,32 @@ with col_right:
         "Participant Target"
     )
 
-    st.info(
-        "Data Participant Target "
-        "akan ditampilkan di sini."
-    )
+
+    if not filtered_participant_df.empty:
+
+        participant_chart = (
+            create_participant_chart(
+                filtered_participant_df
+            )
+        )
+
+
+        st.plotly_chart(
+
+            participant_chart,
+
+            use_container_width=True
+
+        )
+
+    else:
+
+        st.info(
+
+            "Belum ada data Participant "
+            "berdasarkan filter yang dipilih."
+
+        )
 
 
 # =========================================================
@@ -660,9 +1805,12 @@ st.subheader(
     "Program Progress"
 )
 
+
 st.info(
+
     "Grafik Program Progress "
     "akan ditampilkan di sini."
+
 )
 
 
@@ -674,7 +1822,10 @@ st.subheader(
     "Management Alert"
 )
 
+
 st.info(
+
     "Management Alert akan muncul "
     "setelah data program terhubung."
+
 )
