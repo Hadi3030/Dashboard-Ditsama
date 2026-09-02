@@ -1826,7 +1826,16 @@ def extract_participant_target(sheets):
 
             actual = row.iloc[6]
 
-
+            # -------------------------------------------------
+            # CEK NILAI YANG TERBACA
+            # -------------------------------------------------
+            
+            print(
+                "PROGRAM:", program,
+                "| TANGGAL:", tanggal,
+                "| TARGET:", repr(target),
+                "| ACTUAL:", repr(actual)
+            )
             # -------------------------------------------------
             # Jika dua-duanya kosong
             # -------------------------------------------------
