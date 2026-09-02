@@ -114,3 +114,43 @@ div[data-testid="stAlert"] {
 div[data-testid="stAlert"] p {
     color: #17365D !important;
 }
+
+
+/* =========================================
+   FLOATING / ELEVATED DASHBOARD ELEMENTS
+========================================= */
+
+/* Container untuk grafik, tabel, chart, dan elemen utama */
+div[data-testid="stPlotlyChart"],
+div[data-testid="stVegaLiteChart"],
+div[data-testid="stDataFrame"],
+div[data-testid="stTable"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E3EAF4 !important;
+    border-radius: 14px !important;
+    padding: 10px !important;
+
+    /* Efek floating */
+    box-shadow:
+        0 4px 10px rgba(23, 54, 93, 0.08),
+        0 10px 25px rgba(23, 54, 93, 0.06) !important;
+
+    margin-bottom: 20px !important;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+
+/* Efek ketika mouse diarahkan ke grafik */
+div[data-testid="stPlotlyChart"]:hover,
+div[data-testid="stVegaLiteChart"]:hover,
+div[data-testid="stDataFrame"]:hover,
+div[data-testid="stTable"]:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 8px 18px rgba(23, 54, 93, 0.12),
+        0 16px 35px rgba(23, 54, 93, 0.08) !important;
+}
