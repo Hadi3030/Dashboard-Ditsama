@@ -164,6 +164,7 @@
 import io
 import requests
 import pandas as pd
+import streamlit as st
 
 
 # =========================================================
@@ -173,52 +174,24 @@ import pandas as pd
 def load_google_sheets(url):
     """
     Membaca Google Sheets sebagai file Excel.
-
-    URL:
-    Google Sheets biasa / sharing URL
-
-    Output:
-    Dictionary:
-    {
-        "nama_sheet": dataframe
-    }
-
-    DataFrame dibaca tanpa header agar
-    struktur asli Excel tetap dipertahankan.
+    Semua sheet dibaca dengan header=None.
     """
 
-    # -----------------------------------------------------
-    # Ambil Spreadsheet ID
-    # -----------------------------------------------------
-
     try:
-
         spreadsheet_id = (
             url
             .split("/d/")[1]
             .split("/")[0]
         )
-
     except Exception as e:
-
         raise ValueError(
             "URL Google Sheets tidak valid."
         ) from e
-
-
-    # -----------------------------------------------------
-    # URL export Excel
-    # -----------------------------------------------------
 
     export_url = (
         f"https://docs.google.com/spreadsheets/d/"
         f"{spreadsheet_id}/export?format=xlsx"
     )
-
-
-    # -----------------------------------------------------
-    # Request
-    # -----------------------------------------------------
 
     response = requests.get(
         export_url,
@@ -227,28 +200,20 @@ def load_google_sheets(url):
 
     response.raise_for_status()
 
+    # Validasi file
+    if not response.content.startswith(b"PK"):
+        raise ValueError(
+            "Google Sheets tidak mengembalikan file Excel."
+        )
 
-    # -----------------------------------------------------
-    # Baca workbook
-    # -----------------------------------------------------
-
-    excel_file = io.BytesIO(
-        response.content
-    )
-
-
-    # -----------------------------------------------------
-    # Buka seluruh sheet
-    # -----------------------------------------------------
+    excel_file = io.BytesIO(response.content)
 
     excel = pd.ExcelFile(
         excel_file,
         engine="openpyxl"
     )
 
-
     sheets = {}
-
 
     for sheet_name in excel.sheet_names:
 
@@ -257,7 +222,6 @@ def load_google_sheets(url):
             sheet_name=sheet_name,
             header=None
         )
-
 
     return sheets
 
@@ -268,18 +232,14 @@ def load_google_sheets(url):
 
 def load_sharepoint_excel(url):
     """
-    Membaca file Excel dari SharePoint.
+    Membaca Excel dari SharePoint.
 
-    File dibaca sebagai binary kemudian
-    diproses menggunakan pandas/openpyxl.
-
-    Output:
-    Dictionary:
-    {
-        "SIAP": dataframe,
-        "INSPIRASI": dataframe,
-        ...
-    }
+    Mengembalikan:
+        {
+            "SIAP": dataframe,
+            "INSPIRASI": dataframe,
+            ...
+        }
     """
 
     # -----------------------------------------------------
@@ -287,30 +247,41 @@ def load_sharepoint_excel(url):
     # -----------------------------------------------------
 
     if "?" in url:
-
-        download_url = (
-            url + "&download=1"
-        )
-
+        download_url = url + "&download=1"
     else:
+        download_url = url + "?download=1"
 
-        download_url = (
-            url + "?download=1"
+    # -----------------------------------------------------
+    # Request
+    # -----------------------------------------------------
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0 Safari/537.36"
+        )
+    }
+
+    try:
+
+        response = requests.get(
+            download_url,
+            headers=headers,
+            timeout=60,
+            allow_redirects=True
         )
 
+        response.raise_for_status()
 
-    # -----------------------------------------------------
-    # Request ke SharePoint
-    # -----------------------------------------------------
+    except requests.RequestException as e:
 
-    response = requests.get(
-        download_url,
-        timeout=60,
-        allow_redirects=True
-    )
-
-    response.raise_for_status()
-
+        raise ValueError(
+            "Gagal mengakses file SharePoint. "
+            "Periksa koneksi dan izin akses file."
+        ) from e
 
     # -----------------------------------------------------
     # Validasi response
@@ -322,43 +293,51 @@ def load_sharepoint_excel(url):
         .lower()
     )
 
+    content = response.content
 
-    # Jika SharePoint mengembalikan halaman HTML
-    # biasanya berarti file tidak bisa diakses
-    # secara anonymous/public.
+    # File Excel .xlsx adalah ZIP
+    is_excel = content.startswith(b"PK")
 
-    if (
-        "text/html" in content_type
-        and
-        not response.content.startswith(
-            b"PK"
-        )
-    ):
+    if not is_excel:
+
+        if "text/html" in content_type:
+
+            raise ValueError(
+                "SharePoint mengembalikan halaman web/login "
+                "bukan file Excel. "
+                "Pastikan file SharePoint dapat diakses "
+                "tanpa login."
+            )
 
         raise ValueError(
-            "SharePoint tidak mengembalikan "
-            "file Excel. Pastikan link SharePoint "
-            "dapat diakses tanpa login."
+            "Data dari SharePoint bukan file Excel."
         )
 
+    # -----------------------------------------------------
+    # Baca workbook
+    # -----------------------------------------------------
+
+    excel_file = io.BytesIO(content)
+
+    try:
+
+        excel = pd.ExcelFile(
+            excel_file,
+            engine="openpyxl"
+        )
+
+    except Exception as e:
+
+        raise ValueError(
+            "File SharePoint berhasil diakses, "
+            "tetapi tidak dapat dibaca sebagai Excel."
+        ) from e
 
     # -----------------------------------------------------
-    # Baca sebagai Excel
+    # Baca seluruh sheet
     # -----------------------------------------------------
-
-    excel_file = io.BytesIO(
-        response.content
-    )
-
-
-    excel = pd.ExcelFile(
-        excel_file,
-        engine="openpyxl"
-    )
-
 
     sheets = {}
-
 
     for sheet_name in excel.sheet_names:
 
@@ -368,7 +347,6 @@ def load_sharepoint_excel(url):
             header=None
         )
 
-
     return sheets
 
 
@@ -376,39 +354,35 @@ def load_sharepoint_excel(url):
 # LOAD ALL SHEETS
 # =========================================================
 
+@st.cache_data(ttl=300)
 def load_all_sheets(url):
     """
-    Fungsi utama untuk membaca data.
-
-    Fungsi ini otomatis mengenali:
+    Otomatis membaca:
     - Google Sheets
     - SharePoint Excel
     """
 
     url_lower = str(url).lower()
 
-
-    # =====================================================
+    # -----------------------------------------------------
     # GOOGLE SHEETS
-    # =====================================================
+    # -----------------------------------------------------
 
     if "docs.google.com/spreadsheets" in url_lower:
 
         return load_google_sheets(url)
 
-
-    # =====================================================
+    # -----------------------------------------------------
     # SHAREPOINT
-    # =====================================================
+    # -----------------------------------------------------
 
     if "sharepoint.com" in url_lower:
 
         return load_sharepoint_excel(url)
 
-
-    # =====================================================
-    # FORMAT TIDAK DIKENAL
-    # =====================================================
+    # -----------------------------------------------------
+    # URL tidak dikenal
+    # -----------------------------------------------------
 
     raise ValueError(
         "Sumber data tidak dikenali. "
