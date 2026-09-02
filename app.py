@@ -78,7 +78,6 @@ try:
 
     data_loaded = True
 
-
 except Exception as e:
 
     financial_df = pd.DataFrame()
@@ -115,6 +114,7 @@ if (
             "Program"
         ]
         .dropna()
+        .astype(str)
         .unique()
         .tolist()
     )
@@ -187,10 +187,12 @@ if (
 ):
 
     year_list = sorted(
-        financial_df[
-            "Tahun"
-        ]
+        pd.to_numeric(
+            financial_df["Tahun"],
+            errors="coerce"
+        )
         .dropna()
+        .astype(int)
         .unique()
         .tolist()
     )
@@ -215,27 +217,6 @@ tahun_filter = st.sidebar.selectbox(
 # =========================================================
 # 4. BULAN FILTER
 # =========================================================
-#
-# PENTING:
-#
-# Kita TIDAK menggunakan "Tanggal Pengajuan".
-#
-# Kolom "Bulan" sudah dibuat oleh:
-#
-# extract_program_info()
-#
-# dari nama sheet Excel.
-#
-# Contoh:
-#
-# DITSAMA.PM-3-6-2026-SIAP
-#
-# menghasilkan:
-#
-# Bulan = 6
-#
-# =========================================================
-
 
 bulan_mapping = {
 
@@ -255,18 +236,51 @@ bulan_mapping = {
 }
 
 
-bulan_options = [
-    "Semua Bulan"
-] + list(
+bulan_list = list(
     bulan_mapping.keys()
 )
 
 
-bulan_filter = st.sidebar.selectbox(
-    "Bulan",
-    bulan_options,
-    key="bulan_filter"
-)
+# =========================================================
+# BULAN CHECKBOX DROPDOWN
+# =========================================================
+
+with st.sidebar.expander(
+    "☑  Pilih Bulan",
+    expanded=False
+):
+
+    # -----------------------------------------------------
+    # SEMUA BULAN
+    # -----------------------------------------------------
+
+    semua_bulan = st.checkbox(
+        "Semua Bulan",
+        value=True,
+        key="semua_bulan"
+    )
+
+
+    # -----------------------------------------------------
+    # BULAN YANG DIPILIH
+    # -----------------------------------------------------
+
+    bulan_filter = []
+
+
+    for bulan in bulan_list:
+
+        selected = st.checkbox(
+            bulan,
+            value=semua_bulan,
+            key=f"bulan_{bulan}"
+        )
+
+        if selected:
+
+            bulan_filter.append(
+                bulan
+            )
 
 
 # =========================================================
@@ -305,6 +319,9 @@ if program_filter:
 
 else:
 
+    # Kalau tidak ada program yang dicentang,
+    # maka hasil data dibuat kosong.
+
     filtered_df = filtered_df.iloc[0:0]
 
 
@@ -329,51 +346,53 @@ if bidang_filter != "Semua Bidang":
 if tahun_filter != "Semua Tahun":
 
     filtered_df = filtered_df[
-        filtered_df[
-            "Tahun"
-        ] == tahun_filter
+        pd.to_numeric(
+            filtered_df["Tahun"],
+            errors="coerce"
+        ) == int(tahun_filter)
     ]
 
 
 # =========================================================
 # FILTER 4 — BULAN
 # =========================================================
-#
-# INI BAGIAN YANG DIPERBAIKI.
-#
-# Sebelumnya:
-#
-# Tanggal Pengajuan -> .dt.month
-#
-# Sekarang:
-#
-# Kolom Bulan -> langsung dibandingkan
-# dengan nomor bulan.
-#
-# Contoh:
-#
-# Juli = 7
-#
-# filtered_df["Bulan"] == 7
-#
-# =========================================================
+
+# Kalau "Semua Bulan" tidak dicentang,
+# kita hanya mengambil bulan yang dicentang.
 
 if (
-    bulan_filter != "Semua Bulan"
+    not semua_bulan
+    and len(bulan_filter) > 0
     and "Bulan" in filtered_df.columns
 ):
 
-    bulan_number = bulan_mapping[
-        bulan_filter
+    # Ubah nama bulan menjadi nomor bulan.
+    #
+    # Contoh:
+    # Januari = 1
+    # Juni    = 6
+    # Juli    = 7
+
+    bulan_number = [
+        bulan_mapping[bulan]
+        for bulan in bulan_filter
     ]
 
+
+    # Filter dataframe berdasarkan nomor bulan.
 
     filtered_df = filtered_df[
         pd.to_numeric(
             filtered_df["Bulan"],
             errors="coerce"
-        ) == bulan_number
+        ).isin(
+            bulan_number
+        )
     ]
+
+
+# Kalau "Semua Bulan" dicentang,
+# tidak ada filter bulan yang diterapkan.
 
 
 # =========================================================
@@ -429,7 +448,9 @@ if not filtered_df.empty:
 else:
 
     total_program = 0
+
     total_pengajuan = 0
+
     total_saldo = 0
 
 
@@ -441,7 +462,7 @@ col1, col2, col3, col4 = st.columns(4)
 
 
 # =========================================================
-# KPI 1
+# KPI 1 — TOTAL PROGRAM
 # =========================================================
 
 with col1:
@@ -453,7 +474,7 @@ with col1:
 
 
 # =========================================================
-# KPI 2
+# KPI 2 — TOTAL NILAI PENGAJUAN
 # =========================================================
 
 with col2:
@@ -465,7 +486,7 @@ with col2:
 
 
 # =========================================================
-# KPI 3
+# KPI 3 — SISA SALDO
 # =========================================================
 
 with col3:
@@ -477,7 +498,7 @@ with col3:
 
 
 # =========================================================
-# KPI 4
+# KPI 4 — MANAGEMENT ALERT
 # =========================================================
 
 with col4:
@@ -490,8 +511,7 @@ with col4:
 
 # =========================================================
 # FINANCIAL PERFORMANCE
-# &
-# PARTICIPANT TARGET
+# & PARTICIPANT TARGET
 # =========================================================
 
 col_left, col_right = st.columns(
@@ -512,12 +532,11 @@ with col_left:
 
     if not filtered_df.empty:
 
-        # Grafik menggunakan DATA YANG SUDAH DIFILTER.
+        # Grafik menggunakan data yang
+        # SUDAH mengikuti seluruh filter.
 
-        financial_chart = (
-            create_financial_chart(
-                filtered_df
-            )
+        financial_chart = create_financial_chart(
+            filtered_df
         )
 
 
