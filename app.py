@@ -234,14 +234,15 @@ filtered_df = financial_df.copy()
 # FILTER PROGRAM
 # ---------------------------------------------------------
 
-if program_filter != "Semua Program":
+if program_filter:
 
     filtered_df = filtered_df[
-        filtered_df[
-            "Program"
-        ]
-        == program_filter
+        filtered_df["Program"].isin(program_filter)
     ]
+
+else:
+
+    filtered_df = filtered_df.iloc[0:0]
 
 
 # ---------------------------------------------------------
