@@ -35,7 +35,10 @@ section[data-testid="stSidebar"] {
 }
 
 
-/* Tulisan sidebar */
+/* =========================================
+   SIDEBAR TEXT
+========================================= */
+
 section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] h1,
@@ -49,13 +52,95 @@ section[data-testid="stSidebar"] h3 {
    SIDEBAR SELECTBOX
 ========================================= */
 
+/*
+   Hanya mengatur kotak selectbox.
+   Tidak menggunakan selector "*"
+   agar dropdown Streamlit tidak terganggu.
+*/
+
 section[data-testid="stSidebar"] [data-baseweb="select"] {
     background-color: #FFFFFF !important;
-    border-radius: 8px;
+    border-radius: 8px !important;
 }
 
-section[data-testid="stSidebar"] [data-baseweb="select"] * {
+
+/* Tulisan yang sedang terpilih */
+
+section[data-testid="stSidebar"]
+[data-baseweb="select"]
+[role="combobox"] {
     color: #17365D !important;
+}
+
+
+/* =========================================
+   DROPDOWN MENU
+========================================= */
+
+/*
+   Dropdown Streamlit/BaseWeb kadang muncul
+   di luar struktur sidebar.
+   
+   z-index tinggi memastikan menu berada
+   di atas elemen dashboard lainnya.
+*/
+
+[data-baseweb="popover"] {
+    z-index: 999999 !important;
+}
+
+
+/* Tulisan pilihan di dalam dropdown */
+
+[data-baseweb="menu"] {
+    background-color: #FFFFFF !important;
+}
+
+
+/* Item dropdown */
+
+[data-baseweb="menu"] li {
+    color: #17365D !important;
+}
+
+
+/* Item ketika mouse diarahkan */
+
+[data-baseweb="menu"] li:hover {
+    background-color: #D9E2F3 !important;
+}
+
+
+/* =========================================
+   SIDEBAR EXPANDER
+========================================= */
+
+/*
+   Digunakan untuk:
+   ☑ Pilih Program
+*/
+
+section[data-testid="stSidebar"]
+[data-testid="stExpander"] {
+    border: none !important;
+}
+
+
+/* Header expander */
+
+section[data-testid="stSidebar"]
+[data-testid="stExpander"] summary {
+    color: #FFFFFF !important;
+}
+
+
+/* Tulisan di dalam expander */
+
+section[data-testid="stSidebar"]
+[data-testid="stExpander"] p,
+section[data-testid="stSidebar"]
+[data-testid="stExpander"] label {
+    color: #FFFFFF !important;
 }
 
 
@@ -66,13 +151,34 @@ section[data-testid="stSidebar"] [data-baseweb="select"] * {
 section[data-testid="stSidebar"] .stButton button {
     background-color: #FFFFFF !important;
     color: #17365D !important;
-    border-radius: 8px;
+
+    border-radius: 8px !important;
+
     font-weight: 600;
+
+    border: none !important;
 }
+
+
+/* Hover button */
 
 section[data-testid="stSidebar"] .stButton button:hover {
     background-color: #D9E2F3 !important;
     color: #17365D !important;
+}
+
+
+/* =========================================
+   CHECKBOX PROGRAM
+========================================= */
+
+/*
+   Checkbox tetap berada di sidebar biru.
+*/
+
+section[data-testid="stSidebar"]
+[data-testid="stCheckbox"] label {
+    color: #FFFFFF !important;
 }
 
 
@@ -82,88 +188,9 @@ section[data-testid="stSidebar"] .stButton button:hover {
 
 div[data-testid="metric-container"] {
     background-color: #FFFFFF !important;
-    border: 1px solid #D9E2F3;
-    border-radius: 12px;
-    padding: 15px;
-}
-
-
-/* Angka KPI */
-div[data-testid="metric-container"]
-[data-testid="stMetricValue"] {
-    color: #17365D !important;
-}
-
-
-/* Label KPI */
-div[data-testid="metric-container"]
-[data-testid="stMetricLabel"] {
-    color: #17365D !important;
-}
-
-
-/* =========================================
-   INFO BOX
-========================================= */
-
-div[data-testid="stAlert"] {
-    background-color: #FFFFFF !important;
-    border: 1px solid #D9E2F3 !important;
-}
-
-div[data-testid="stAlert"] p {
-    color: #17365D !important;
-}
-
-
-/* =========================================
-   FLOATING / ELEVATED DASHBOARD ELEMENTS
-========================================= */
-
-/* Container untuk grafik, tabel, chart, dan elemen utama */
-div[data-testid="stPlotlyChart"],
-div[data-testid="stVegaLiteChart"],
-div[data-testid="stDataFrame"],
-div[data-testid="stTable"] {
-    background-color: #FFFFFF !important;
-    border: 1px solid #E3EAF4 !important;
-    border-radius: 14px !important;
-    padding: 10px !important;
-
-    /* Efek floating */
-    box-shadow:
-        0 4px 10px rgba(23, 54, 93, 0.08),
-        0 10px 25px rgba(23, 54, 93, 0.06) !important;
-
-    margin-bottom: 20px !important;
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease !important;
-}
-
-
-/* Efek ketika mouse diarahkan ke grafik */
-div[data-testid="stPlotlyChart"]:hover,
-div[data-testid="stVegaLiteChart"]:hover,
-div[data-testid="stDataFrame"]:hover,
-div[data-testid="stTable"]:hover {
-    transform: translateY(-3px);
-
-    box-shadow:
-        0 8px 18px rgba(23, 54, 93, 0.12),
-        0 16px 35px rgba(23, 54, 93, 0.08) !important;
-}
-
-
-/* =========================================
-   FLOATING KPI CARD
-========================================= */
-
-div[data-testid="metric-container"] {
-    background: #FFFFFF !important;
 
     border: 1px solid #E3EAF4 !important;
+
     border-radius: 14px !important;
 
     padding: 18px !important;
@@ -178,11 +205,101 @@ div[data-testid="metric-container"] {
 }
 
 
-/* KPI naik sedikit ketika disentuh */
+/* =========================================
+   KPI VALUE
+========================================= */
+
+div[data-testid="metric-container"]
+[data-testid="stMetricValue"] {
+    color: #17365D !important;
+}
+
+
+/* =========================================
+   KPI LABEL
+========================================= */
+
+div[data-testid="metric-container"]
+[data-testid="stMetricLabel"] {
+    color: #17365D !important;
+}
+
+
+/* =========================================
+   KPI HOVER
+========================================= */
+
 div[data-testid="metric-container"]:hover {
+
     transform: translateY(-4px);
 
     box-shadow:
         0 8px 18px rgba(23, 54, 93, 0.12),
         0 16px 35px rgba(23, 54, 93, 0.08) !important;
+}
+
+
+/* =========================================
+   GRAPH / TABLE CONTAINER
+========================================= */
+
+div[data-testid="stPlotlyChart"],
+div[data-testid="stVegaLiteChart"],
+div[data-testid="stDataFrame"],
+div[data-testid="stTable"] {
+
+    background-color: #FFFFFF !important;
+
+    border: 1px solid #E3EAF4 !important;
+
+    border-radius: 14px !important;
+
+    padding: 10px !important;
+
+    box-shadow:
+        0 4px 10px rgba(23, 54, 93, 0.08),
+        0 10px 25px rgba(23, 54, 93, 0.06) !important;
+
+    margin-bottom: 20px !important;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+
+/* =========================================
+   GRAPH / TABLE HOVER
+========================================= */
+
+div[data-testid="stPlotlyChart"]:hover,
+div[data-testid="stVegaLiteChart"]:hover,
+div[data-testid="stDataFrame"]:hover,
+div[data-testid="stTable"]:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 8px 18px rgba(23, 54, 93, 0.12),
+        0 16px 35px rgba(23, 54, 93, 0.08) !important;
+}
+
+
+/* =========================================
+   INFO BOX
+========================================= */
+
+div[data-testid="stAlert"] {
+
+    background-color: #FFFFFF !important;
+
+    border: 1px solid #D9E2F3 !important;
+
+    border-radius: 12px !important;
+}
+
+
+div[data-testid="stAlert"] p {
+
+    color: #17365D !important;
 }
